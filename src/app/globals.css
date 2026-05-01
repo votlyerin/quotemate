@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* QuoteMate Design Tokens */
+  --color-qm-bg: #F7F7F5;
+  --color-qm-surface: #FFFFFF;
+  --color-qm-surface-alt: #F2F2EF;
+  --color-qm-border: rgba(15, 23, 23, 0.08);
+  --color-qm-border-strong: rgba(15, 23, 23, 0.14);
+  --color-qm-text: #0E1414;
+  --color-qm-text-muted: #5C6660;
+  --color-qm-text-faint: #8B938E;
+  --color-qm-accent: #10B981;
+  --color-qm-accent-dark: #0B8F66;
+  --color-qm-accent-soft: #E6F8F0;
+  --color-qm-danger: #E0563D;
+  --color-qm-danger-soft: #FDECE7;
+  --color-qm-warn: #E8A33A;
+  --color-qm-warn-soft: #FBF1DC;
+  --color-qm-good: #10B981;
+  --color-qm-good-soft: #E6F8F0;
+  --color-qm-excellent: #0B8F66;
+  --color-qm-excellent-soft: #D7F2E5;
+}
+
+:root {
+  --background: #F7F7F5;
+  --foreground: #0E1414;
+}
+
+.dark {
+  --background: #0B0F0E;
+  --foreground: #F4F6F4;
+  --color-qm-bg: #0B0F0E;
+  --color-qm-surface: #151B19;
+  --color-qm-surface-alt: #1F2624;
+  --color-qm-border: rgba(255, 255, 255, 0.08);
+  --color-qm-border-strong: rgba(255, 255, 255, 0.16);
+  --color-qm-text: #F4F6F4;
+  --color-qm-text-muted: #9BA39E;
+  --color-qm-text-faint: #6B736E;
+  --color-qm-accent-soft: rgba(16, 185, 129, 0.12);
+  --color-qm-danger: #FF6B4F;
+  --color-qm-danger-soft: rgba(255, 107, 79, 0.14);
+  --color-qm-warn: #F0B557;
+  --color-qm-warn-soft: rgba(240, 181, 87, 0.14);
+  --color-qm-good-soft: rgba(16, 185, 129, 0.14);
+  --color-qm-excellent: #34D9A5;
+  --color-qm-excellent-soft: rgba(52, 217, 165, 0.14);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), -apple-system, system-ui, sans-serif;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
