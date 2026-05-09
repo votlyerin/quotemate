@@ -1,15 +1,26 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function Home() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+function isSupabaseConfigured() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  return url && !url.includes("your-project");
+}
 
-  if (user) {
-    redirect("/dashboard");
-  } else {
-    redirect("/login");
+export default async function Home() {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        redirect("/dashboard");
+      }
+    } catch {
+      // Supabase unreachable
+    }
   }
+
+  redirect("/login");
 }

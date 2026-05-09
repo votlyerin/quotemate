@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Bell,
@@ -8,9 +9,14 @@ import {
   DollarSign,
   BarChart3,
   ArrowRight,
+  X,
+  Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import type { Profile, Quote } from "@/types/database";
+import { effectiveStatus } from "@/lib/quote-status";
+
+const FREE_MONTHLY_LIMIT = 5;
 
 interface DashboardStats {
   month: number;
@@ -23,6 +29,9 @@ interface DashboardContentProps {
   profile: Profile | null;
   stats: DashboardStats;
   recentQuotes: Quote[];
+  tier?: "free" | "pro";
+  monthlyQuoteCount?: number;
+  checkoutSuccess?: boolean;
 }
 
 function StatCard({
@@ -71,31 +80,21 @@ function StatCard({
 
 function getMarginTone(status: string | null) {
   switch (status) {
-    case "excellent":
-      return "excellent" as const;
-    case "good":
-      return "good" as const;
-    case "risky":
-      return "risky" as const;
-    case "underpriced":
-      return "underpriced" as const;
-    default:
-      return "neutral" as const;
+    case "excellent": return "excellent" as const;
+    case "good":      return "good" as const;
+    case "risky":     return "risky" as const;
+    case "underpriced": return "underpriced" as const;
+    default:          return "neutral" as const;
   }
 }
 
 function getStatusTone(status: string) {
   switch (status) {
-    case "sent":
-      return "sent" as const;
-    case "accepted":
-      return "accepted" as const;
-    case "declined":
-      return "declined" as const;
-    case "expired":
-      return "expired" as const;
-    default:
-      return "draft" as const;
+    case "sent":     return "sent" as const;
+    case "accepted": return "accepted" as const;
+    case "declined": return "declined" as const;
+    case "expired":  return "expired" as const;
+    default:         return "draft" as const;
   }
 }
 
@@ -104,7 +103,6 @@ function formatDate(dateStr: string) {
   const now = new Date();
   const diff = now.getTime() - date.getTime();
   const days = Math.floor(diff / 86400000);
-
   if (days === 0) return "Today";
   if (days === 1) return "Yesterday";
   if (days < 7) return `${days} days ago`;
@@ -115,7 +113,19 @@ export function DashboardContent({
   profile,
   stats,
   recentQuotes,
+  tier = "free",
+  monthlyQuoteCount = 0,
+  checkoutSuccess = false,
 }: DashboardContentProps) {
+  const [successDismissed, setSuccessDismissed] = useState(false);
+
+  // Auto-dismiss the checkout success banner after 6s
+  useEffect(() => {
+    if (!checkoutSuccess) return;
+    const t = setTimeout(() => setSuccessDismissed(true), 6000);
+    return () => clearTimeout(t);
+  }, [checkoutSuccess]);
+
   const firstName = (profile?.owner_name || "there").split(" ")[0];
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -126,8 +136,63 @@ export function DashboardContent({
   const closeRate =
     stats.month > 0 ? Math.round((stats.accepted / stats.month) * 100) : 0;
 
+  const isPro = tier === "pro";
+  const quotasLeft = Math.max(0, FREE_MONTHLY_LIMIT - monthlyQuoteCount);
+  const quotaWarning = !isPro && quotasLeft <= 1;
+  const quotaExhausted = !isPro && quotasLeft === 0;
+
+  const showSuccessBanner = checkoutSuccess && !successDismissed;
+
   return (
     <div className="flex flex-col h-full">
+      {/* Checkout success banner */}
+      {showSuccessBanner && (
+        <div
+          className="mx-4 mt-4 rounded-[14px] px-[14px] py-[12px] flex items-start gap-3"
+          style={{ background: "var(--color-qm-accent-soft)" }}
+        >
+          <div
+            className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-[1px]"
+            style={{ background: "var(--color-qm-accent)" }}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#fff"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div
+              className="text-[14px] font-semibold"
+              style={{ color: "var(--color-qm-accent-dark)" }}
+            >
+              Welcome to QuoteMate Pro!
+            </div>
+            <div
+              className="text-[12px] mt-[2px] opacity-85 leading-snug"
+              style={{ color: "var(--color-qm-accent-dark)" }}
+            >
+              Unlimited quotes, full cost breakdowns, and all Pro features are
+              now unlocked.
+            </div>
+          </div>
+          <button
+            onClick={() => setSuccessDismissed(true)}
+            className="shrink-0 p-1 -mr-1 rounded-full"
+            style={{ color: "var(--color-qm-accent-dark)" }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="pt-[60px] px-[22px] pb-3.5 flex items-center gap-3">
         <div className="w-[42px] h-[42px] rounded-xl bg-qm-accent text-white flex items-center justify-center text-base font-bold">
@@ -139,13 +204,75 @@ export function DashboardContent({
             Hi, {firstName}
           </div>
         </div>
-        <button className="w-[42px] h-[42px] rounded-xl bg-qm-surface border border-qm-border flex items-center justify-center relative">
+        <button className="w-[42px] h-[42px] rounded-xl bg-qm-surface border border-qm-border flex items-center justify-center">
           <Bell size={20} className="text-qm-text" />
-          <div className="absolute top-[11px] right-[11px] w-2 h-2 rounded-full bg-qm-accent border-2 border-qm-surface" />
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-[22px] pb-4">
+        {/* Free tier quota bar */}
+        {!isPro && (
+          <div
+            className="mb-4 rounded-[14px] px-[14px] py-[12px]"
+            style={{
+              background: quotaWarning
+                ? "var(--color-qm-warn-soft)"
+                : "var(--color-qm-surface)",
+              border: `1px solid ${
+                quotaWarning
+                  ? "var(--color-qm-warn)"
+                  : "var(--color-qm-border)"
+              }`,
+            }}
+          >
+            <div className="flex items-center justify-between mb-[8px]">
+              <div
+                className="text-[12px] font-semibold"
+                style={{
+                  color: quotaWarning
+                    ? "var(--color-qm-warn)"
+                    : "var(--color-qm-text-muted)",
+                }}
+              >
+                {quotaExhausted
+                  ? "Monthly quote limit reached"
+                  : `${monthlyQuoteCount} of ${FREE_MONTHLY_LIMIT} free quotes used`}
+              </div>
+              <Link
+                href="/settings"
+                className="flex items-center gap-[4px] text-[11px] font-bold uppercase tracking-[0.3px]"
+                style={{ color: "var(--color-qm-accent)" }}
+              >
+                <Zap size={11} strokeWidth={2.5} />
+                Upgrade
+              </Link>
+            </div>
+            {/* Progress bar */}
+            <div className="h-[5px] rounded-full bg-qm-border overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${Math.min(
+                    100,
+                    (monthlyQuoteCount / FREE_MONTHLY_LIMIT) * 100
+                  )}%`,
+                  background: quotaWarning
+                    ? "var(--color-qm-warn)"
+                    : "var(--color-qm-accent)",
+                }}
+              />
+            </div>
+            {quotaExhausted && (
+              <div
+                className="text-[11px] mt-[6px]"
+                style={{ color: "var(--color-qm-warn)" }}
+              >
+                Resets next month · Upgrade Pro for unlimited quotes
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Hero CTA */}
         <Link href="/new-quote" className="block">
           <div className="bg-qm-text text-qm-bg rounded-[22px] p-5 relative overflow-hidden">
@@ -226,12 +353,19 @@ export function DashboardContent({
                     {quote.customer_name || "Unnamed"}
                   </div>
                   <div className="mt-1 flex items-center gap-1.5">
-                    <Badge tone={getStatusTone(quote.status)} size="sm">
-                      {quote.status.charAt(0).toUpperCase() +
-                        quote.status.slice(1)}
-                    </Badge>
+                    {(() => {
+                      const s = effectiveStatus(quote);
+                      return (
+                        <Badge tone={getStatusTone(s)} size="sm">
+                          {s.charAt(0).toUpperCase() + s.slice(1)}
+                        </Badge>
+                      );
+                    })()}
                     {quote.margin_status && (
-                      <Badge tone={getMarginTone(quote.margin_status)} size="sm">
+                      <Badge
+                        tone={getMarginTone(quote.margin_status)}
+                        size="sm"
+                      >
                         {quote.margin_status.charAt(0).toUpperCase() +
                           quote.margin_status.slice(1)}
                       </Badge>

@@ -1,34 +1,43 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
-export default function LoginPage() {
-  const [email, setEmail] = useState("");
+export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
-  const supabase = createClient();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+    if (password !== confirm) {
+      setError("Passwords don't match.");
+      return;
+    }
+
     setLoading(true);
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      setError(error.message);
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const { error: err } = await supabase.auth.updateUser({ password });
+      if (err) {
+        setError(err.message);
+      } else {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
-    } else {
-      router.push("/dashboard");
-      router.refresh();
     }
   }
 
@@ -57,10 +66,10 @@ export default function LoginPage() {
         </div>
 
         <h1 className="text-2xl font-bold text-qm-text text-center tracking-tight">
-          Welcome back
+          Set new password
         </h1>
         <p className="text-sm text-qm-text-muted text-center mt-2">
-          Sign in to your QuoteMate account
+          Choose something strong — at least 6 characters.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
@@ -72,39 +81,32 @@ export default function LoginPage() {
 
           <div>
             <label className="text-[13px] font-medium text-qm-text-muted block mb-2">
-              Email
+              New password
             </label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Min 6 characters"
               required
+              minLength={6}
               className="w-full h-[52px] px-4 rounded-[14px] border border-qm-border bg-qm-surface text-qm-text text-[17px] outline-none focus:border-qm-accent transition-colors"
             />
           </div>
 
           <div>
             <label className="text-[13px] font-medium text-qm-text-muted block mb-2">
-              Password
+              Confirm password
             </label>
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="Same password again"
               required
+              minLength={6}
               className="w-full h-[52px] px-4 rounded-[14px] border border-qm-border bg-qm-surface text-qm-text text-[17px] outline-none focus:border-qm-accent transition-colors"
             />
-          </div>
-
-          <div className="flex justify-end -mt-1">
-            <Link
-              href="/forgot-password"
-              className="text-[13px] text-qm-text-muted font-medium"
-            >
-              Forgot password?
-            </Link>
           </div>
 
           <button
@@ -112,16 +114,9 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full h-14 rounded-[16px] bg-qm-accent text-white text-[17px] font-semibold tracking-tight disabled:opacity-45 transition-opacity"
           >
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? "Updating…" : "Update password"}
           </button>
         </form>
-
-        <p className="text-sm text-qm-text-muted text-center mt-6">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-qm-accent font-semibold">
-            Sign up
-          </Link>
-        </p>
       </div>
     </div>
   );

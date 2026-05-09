@@ -5,6 +5,7 @@ export interface TruckloadPricing {
   half: number;
   three: number;
   full: number;
+  multiple?: number;
 }
 
 export interface Profile {
@@ -21,8 +22,17 @@ export interface Profile {
   default_travel_fee: number;
   quote_expiry_days: number;
   truckload_pricing: TruckloadPricing;
+  dump_fee_per_ton: number | null;
+  dump_fee_mode: "per_ton" | "flat_rate" | null;
+  flat_dump_fees: Record<string, number> | null;
   item_surcharges: Record<string, number>;
   complexity_fees: Record<string, number>;
+  // Subscription
+  stripe_customer_id: string | null;
+  subscription_status: "trialing" | "active" | "past_due" | "canceled" | "expired" | null;
+  subscription_id: string | null;
+  trial_ends_at: string | null;
+  subscription_ends_at: string | null;
   created_at: string;
   updated_at: string;
 }
