@@ -2,54 +2,36 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Truck, Info } from "lucide-react";
-import type { Profile, TruckloadPricing } from "@/types/database";
+import { Check, ArrowRight } from "lucide-react";
+import type { Profile } from "@/types/database";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-type Step = "welcome" | "business" | "pricing" | "truck";
+// step indices: 0=welcome, 1=business, 2=labor, 3=trucks, 4=done
+const TOTAL_SETUP_STEPS = 3; // steps 1–3 show progress bar
 
-interface OnboardData {
-  businessName: string;
-  ownerName: string;
-  phone: string;
-  email: string;
-  serviceArea: string;
-  minPrice: string;
-  targetMargin: string;
-  laborRate: string;
-  crewSize: string;
-  travelFee: string;
-  expiryDays: string;
-  truckMin: string;
-  truckEight: string;
-  truckQtr: string;
-  truckHalf: string;
-  truckThree: string;
-  truckFull: string;
-}
+const LOAD_SIZES = [
+  { id: "min",      label: "Minimum",        hint: "A few small items" },
+  { id: "eight",    label: "⅛ Truck",         hint: "1–2 items" },
+  { id: "qtr",      label: "¼ Truck",         hint: "Couch, mattress + extras" },
+  { id: "half",     label: "½ Truck",         hint: "Small room cleanout" },
+  { id: "three",    label: "¾ Truck",         hint: "Garage / large room" },
+  { id: "full",     label: "Full Truck",      hint: "Full clean-out" },
+  { id: "multiple", label: "Multiple Trucks", hint: "Large estate / commercial" },
+] as const;
 
-// ─── Primitives ───────────────────────────────────────────────────────────────
+type LoadId = typeof LOAD_SIZES[number]["id"];
 
-function StepDots({ current, total }: { current: number; total: number }) {
-  return (
-    <div className="flex gap-[6px] px-[22px] pb-1">
-      {Array.from({ length: total }).map((_, i) => (
-        <div
-          key={i}
-          className="h-1 rounded-full transition-all duration-200"
-          style={{
-            width: i === current ? 24 : 8,
-            background:
-              i <= current
-                ? "var(--color-qm-accent)"
-                : "var(--color-qm-border)",
-          }}
-        />
-      ))}
-    </div>
-  );
-}
+const DEFAULT_TRUCK_PRICES: Record<LoadId, string> = {
+  min: "95", eight: "145", qtr: "225", half: "325",
+  three: "475", full: "625", multiple: "850",
+};
+const DEFAULT_DUMP_FEES: Record<LoadId, string> = {
+  min: "15", eight: "25", qtr: "40", half: "60",
+  three: "80", full: "100", multiple: "175",
+};
+
+// ─── Shared primitives ────────────────────────────────────────────────────────
 
 function Field({
   label,
@@ -60,6 +42,8 @@ function Field({
   prefix,
   suffix,
   optional,
+  required,
+  hasError,
   inputMode,
 }: {
   label: string;
@@ -70,6 +54,8 @@ function Field({
   prefix?: string;
   suffix?: string;
   optional?: boolean;
+  required?: boolean;
+  hasError?: boolean;
   inputMode?: React.InputHTMLAttributes<HTMLInputElement>["inputMode"];
 }) {
   return (
@@ -79,8 +65,20 @@ function Field({
         {optional && (
           <span className="text-qm-text-faint font-normal">· optional</span>
         )}
+        {required && (
+          <span style={{ color: "var(--color-qm-accent)" }} className="font-normal">
+            · required
+          </span>
+        )}
       </div>
-      <div className="flex items-center bg-qm-surface border border-qm-border rounded-[14px] px-[14px] h-[52px]">
+      <div
+        className="flex items-center bg-qm-surface rounded-[14px] px-[14px] h-[52px]"
+        style={{
+          border: hasError
+            ? "1.5px solid var(--color-qm-danger)"
+            : "1px solid var(--color-qm-border)",
+        }}
+      >
         {prefix && (
           <span className="text-qm-text-muted text-[17px] font-medium mr-1.5 shrink-0">
             {prefix}
@@ -104,462 +102,46 @@ function Field({
   );
 }
 
-function TruckRow({
-  label,
-  sub,
-  value,
-  onChange,
-}: {
-  label: string;
-  sub: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="flex items-center gap-3 bg-qm-surface border border-qm-border rounded-2xl px-[14px] py-3">
-      <div
-        className="w-11 h-11 rounded-[11px] flex items-center justify-center shrink-0"
-        style={{ background: "var(--color-qm-surface-alt)" }}
-      >
-        <Truck size={20} className="text-qm-text-muted" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[15px] font-semibold text-qm-text">{label}</div>
-        <div className="text-[12px] text-qm-text-muted mt-[1px] truncate">
-          {sub}
-        </div>
-      </div>
-      <div
-        className="flex items-center rounded-[10px] px-[10px] shrink-0"
-        style={{
-          background: "var(--color-qm-surface-alt)",
-          width: 96,
-        }}
-      >
-        <span className="text-qm-text-muted text-[15px] font-medium mr-0.5">
-          $
-        </span>
-        <input
-          type="number"
-          inputMode="numeric"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="flex-1 bg-transparent border-none outline-none text-[17px] font-semibold text-qm-text min-w-0 py-[10px] text-right"
-        />
-      </div>
-    </div>
-  );
-}
+// ─── Progress bar ─────────────────────────────────────────────────────────────
 
-// ─── Step shells ──────────────────────────────────────────────────────────────
-
-function OnboardShell({
-  stepIndex,
-  title,
-  subtitle,
-  onBack,
+function ProgressHeader({
+  step,
   onSkip,
-  cta,
-  onCta,
-  ctaLoading,
-  children,
+  saving,
 }: {
-  stepIndex: number;
-  title: string;
-  subtitle: string;
-  onBack?: () => void;
+  step: 1 | 2 | 3;
   onSkip: () => void;
-  cta: string;
-  onCta: () => void;
-  ctaLoading?: boolean;
-  children: React.ReactNode;
+  saving: boolean;
 }) {
+  const pct = Math.round((step / TOTAL_SETUP_STEPS) * 100);
   return (
-    <div className="min-h-dvh flex flex-col bg-qm-bg">
-      {/* Top bar */}
-      <div className="flex items-center gap-2 px-[22px] pt-[56px] pb-3 shrink-0">
-        <button
-          onClick={onBack}
-          className="p-2 -ml-2 rounded-full active:bg-qm-border"
-        >
-          <ChevronLeft size={22} className="text-qm-text" strokeWidth={2} />
-        </button>
-        <div className="flex-1 text-center text-[15px] font-semibold text-qm-text">
-          Setup {stepIndex + 1} of 3
-        </div>
+    <div className="shrink-0 px-[22px] pt-[56px] pb-5">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[13px] font-semibold text-qm-text-muted">
+          Step {step} of {TOTAL_SETUP_STEPS}
+        </span>
         <button
           onClick={onSkip}
-          className="text-[14px] font-semibold text-qm-text-muted px-2"
+          disabled={saving}
+          className="text-[13px] font-semibold text-qm-text-muted disabled:opacity-50"
         >
           Skip
         </button>
       </div>
-
-      {/* Step dots */}
-      <StepDots current={stepIndex} total={3} />
-
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-[22px] pt-6 pb-4">
-        <div className="text-[26px] font-bold text-qm-text tracking-[-0.6px] leading-[1.15]">
-          {title}
-        </div>
-        {subtitle && (
-          <div className="text-[14px] text-qm-text-muted mt-2 leading-relaxed">
-            {subtitle}
-          </div>
-        )}
-        <div className="mt-6 flex flex-col gap-4">{children}</div>
-      </div>
-
-      {/* Sticky footer */}
-      <div
-        className="px-[22px] pt-3 pb-8 shrink-0"
-        style={{ borderTop: "1px solid var(--color-qm-border)" }}
-      >
-        <button
-          onClick={onCta}
-          disabled={ctaLoading}
-          className="w-full h-14 rounded-[16px] bg-qm-accent text-white text-[17px] font-semibold"
-          style={{ opacity: ctaLoading ? 0.7 : 1 }}
-        >
-          {ctaLoading ? "Saving…" : cta}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── Steps ────────────────────────────────────────────────────────────────────
-
-function WelcomeStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }) {
-  return (
-    <div className="min-h-dvh flex flex-col bg-qm-bg px-6 pt-[60px] pb-10">
-      {/* Hero */}
-      <div className="flex-1 flex flex-col items-center justify-center text-center gap-0">
-        {/* Logo */}
+      <div className="w-full h-1 rounded-full" style={{ background: "var(--color-qm-border)" }}>
         <div
-          className="w-[72px] h-[72px] rounded-[22px] flex items-center justify-center mb-7 shadow-lg"
-          style={{ background: "var(--color-qm-accent)" }}
-        >
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-            <path
-              d="M13 14h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H17l-4 3v-3h-1a2 2 0 0 1-2-2v-8c0-1.1.9-2 2-2z"
-              fill="white"
-              opacity="0.2"
-            />
-            <path
-              d="M19.5 16.5c-2.2 0-3.7 1.2-3.7 3 0 3.4 5.4 2 5.4 3.7 0 .6-.7 1-1.7 1s-1.8-.4-2.2-1.2"
-              stroke="white"
-              strokeWidth="1.8"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M19.5 15v1.5M19.5 23.2v1.5"
-              stroke="white"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
-
-        <div className="text-[38px] font-bold text-qm-text tracking-[-1.2px] leading-none">
-          QuoteMate
-        </div>
-
-        <div className="mt-5 text-[19px] font-medium text-qm-text leading-[1.35] tracking-[-0.4px]">
-          Quote jobs faster.
-          <br />
-          Price them smarter.
-          <br />
-          <span style={{ color: "var(--color-qm-accent)" }}>
-            Protect your profit.
-          </span>
-        </div>
-
-        <div className="mt-4 text-[14px] text-qm-text-muted leading-relaxed max-w-[280px]">
-          A mobile quote calculator built for junk removal businesses.
-        </div>
-
-        {/* Preview chip */}
-        <div
-          className="mt-8 flex items-center gap-4 w-full max-w-[320px] rounded-2xl px-[18px] py-[14px]"
+          className="h-1 rounded-full transition-all duration-300"
           style={{
-            background: "var(--color-qm-surface)",
-            border: "1px solid var(--color-qm-border)",
+            width: `${pct}%`,
+            background: "var(--color-qm-accent)",
           }}
-        >
-          <div
-            className="w-[42px] h-[42px] rounded-[12px] flex items-center justify-center shrink-0"
-            style={{ background: "var(--color-qm-accent-soft)" }}
-          >
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.75"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ color: "var(--color-qm-accent)" }}
-            >
-              <path d="M12 3v18M16 7c0-1.5-1.5-3-4-3s-4 1.5-4 3 1.5 3 4 3 4 1.5 4 3-1.5 3-4 3-4-1.5-4-3" />
-            </svg>
-          </div>
-          <div className="flex-1 min-w-0 text-left">
-            <div className="text-[14px] font-semibold text-qm-text">
-              Recommended quote
-            </div>
-            <div className="text-[12px] text-qm-text-muted mt-[2px]">
-              46% margin · Good profit
-            </div>
-          </div>
-          <div className="text-[22px] font-bold text-qm-text tracking-[-0.5px]">
-            $425
-          </div>
-        </div>
-      </div>
-
-      {/* Buttons */}
-      <div className="flex flex-col gap-3 pt-6">
-        <button
-          onClick={onNext}
-          className="w-full h-14 rounded-[16px] bg-qm-accent text-white text-[17px] font-semibold"
-        >
-          Get started →
-        </button>
-        <button
-          onClick={onSkip}
-          className="w-full h-12 rounded-[14px] text-[15px] font-semibold text-qm-text-muted"
-        >
-          Skip setup
-        </button>
+        />
       </div>
     </div>
   );
 }
 
-function BusinessStep({
-  data,
-  onChange,
-  onBack,
-  onSkip,
-  onNext,
-}: {
-  data: OnboardData;
-  onChange: (k: keyof OnboardData, v: string) => void;
-  onBack: () => void;
-  onSkip: () => void;
-  onNext: () => void;
-}) {
-  return (
-    <OnboardShell
-      stepIndex={0}
-      title="Tell us about your business"
-      subtitle="This shows up on your quotes so customers know who they're working with."
-      onBack={onBack}
-      onSkip={onSkip}
-      cta="Continue"
-      onCta={onNext}
-    >
-      <Field
-        label="Business name"
-        value={data.businessName}
-        onChange={(v) => onChange("businessName", v)}
-        placeholder="Mike's Junk Removal"
-        optional
-      />
-      <Field
-        label="Owner name"
-        value={data.ownerName}
-        onChange={(v) => onChange("ownerName", v)}
-        placeholder="Mike Henderson"
-        optional
-      />
-      <Field
-        label="Business phone"
-        value={data.phone}
-        onChange={(v) => onChange("phone", v)}
-        placeholder="(555) 123-4567"
-        type="tel"
-        optional
-      />
-      <Field
-        label="Business email"
-        value={data.email}
-        onChange={(v) => onChange("email", v)}
-        placeholder="hello@mikesjunk.com"
-        type="email"
-        optional
-      />
-      <Field
-        label="Service area"
-        value={data.serviceArea}
-        onChange={(v) => onChange("serviceArea", v)}
-        placeholder="Greater Austin, TX"
-        optional
-      />
-    </OnboardShell>
-  );
-}
-
-function PricingStep({
-  data,
-  onChange,
-  onBack,
-  onSkip,
-  onNext,
-}: {
-  data: OnboardData;
-  onChange: (k: keyof OnboardData, v: string) => void;
-  onBack: () => void;
-  onSkip: () => void;
-  onNext: () => void;
-}) {
-  return (
-    <OnboardShell
-      stepIndex={1}
-      title="Set your pricing defaults"
-      subtitle="We use these to calculate profit on every quote. You can change them anytime in Settings."
-      onBack={onBack}
-      onSkip={onSkip}
-      cta="Continue"
-      onCta={onNext}
-    >
-      <div className="grid grid-cols-2 gap-3">
-        <Field
-          label="Min price"
-          value={data.minPrice}
-          onChange={(v) => onChange("minPrice", v)}
-          placeholder="125"
-          type="number"
-          inputMode="numeric"
-          prefix="$"
-        />
-        <Field
-          label="Target margin"
-          value={data.targetMargin}
-          onChange={(v) => onChange("targetMargin", v)}
-          placeholder="45"
-          type="number"
-          inputMode="numeric"
-          suffix="%"
-        />
-        <Field
-          label="Labor rate"
-          value={data.laborRate}
-          onChange={(v) => onChange("laborRate", v)}
-          placeholder="35"
-          type="number"
-          inputMode="numeric"
-          prefix="$"
-          suffix="/hr"
-        />
-        <Field
-          label="Crew size"
-          value={data.crewSize}
-          onChange={(v) => onChange("crewSize", v)}
-          placeholder="2"
-          type="number"
-          inputMode="numeric"
-          suffix="ppl"
-        />
-        <Field
-          label="Travel fee"
-          value={data.travelFee}
-          onChange={(v) => onChange("travelFee", v)}
-          placeholder="25"
-          type="number"
-          inputMode="numeric"
-          prefix="$"
-        />
-        <Field
-          label="Quote expiry"
-          value={data.expiryDays}
-          onChange={(v) => onChange("expiryDays", v)}
-          placeholder="7"
-          type="number"
-          inputMode="numeric"
-          suffix="days"
-        />
-      </div>
-
-      {/* Info tip */}
-      <div
-        className="flex items-start gap-3 rounded-[14px] px-4 py-3"
-        style={{
-          background: "var(--color-qm-accent-soft)",
-          border: "1px solid var(--color-qm-accent-soft)",
-        }}
-      >
-        <Info
-          size={17}
-          className="shrink-0 mt-[1px]"
-          style={{ color: "var(--color-qm-accent-dark)" }}
-        />
-        <div
-          className="text-[13px] leading-relaxed"
-          style={{ color: "var(--color-qm-accent-dark)" }}
-        >
-          We&apos;ll warn you any time a quote falls below your target margin.
-        </div>
-      </div>
-    </OnboardShell>
-  );
-}
-
-const TRUCK_TIERS = [
-  { key: "truckMin" as const, label: "Minimum pickup", sub: "A few small items" },
-  { key: "truckEight" as const, label: "1/8 truck", sub: "Small load · 1–2 items" },
-  { key: "truckQtr" as const, label: "1/4 truck", sub: "Couch, mattress + extras" },
-  { key: "truckHalf" as const, label: "1/2 truck", sub: "Small room cleanout" },
-  { key: "truckThree" as const, label: "3/4 truck", sub: "Garage / large room" },
-  { key: "truckFull" as const, label: "Full truck", sub: "Full clean-out" },
-];
-
-function TruckStep({
-  data,
-  onChange,
-  onBack,
-  onSkip,
-  onFinish,
-  saving,
-}: {
-  data: OnboardData;
-  onChange: (k: keyof OnboardData, v: string) => void;
-  onBack: () => void;
-  onSkip: () => void;
-  onFinish: () => void;
-  saving: boolean;
-}) {
-  return (
-    <OnboardShell
-      stepIndex={2}
-      title="Truckload pricing"
-      subtitle="Set your base price for each load size. We'll suggest these on every quote."
-      onBack={onBack}
-      onSkip={onSkip}
-      cta="Finish setup"
-      onCta={onFinish}
-      ctaLoading={saving}
-    >
-      <div className="flex flex-col gap-[10px]">
-        {TRUCK_TIERS.map((tier) => (
-          <TruckRow
-            key={tier.key}
-            label={tier.label}
-            sub={tier.sub}
-            value={data[tier.key]}
-            onChange={(v) => onChange(tier.key, v)}
-          />
-        ))}
-      </div>
-    </OnboardShell>
-  );
-}
-
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Main export ──────────────────────────────────────────────────────────────
 
 export function OnboardingFlow({
   profile,
@@ -570,115 +152,692 @@ export function OnboardingFlow({
 }) {
   const router = useRouter();
   const tp = profile.truckload_pricing;
+  const fdf = profile.flat_dump_fees as Record<string, number> | null;
 
-  const [step, setStep] = useState<Step>("welcome");
+  // Resume at whichever step the DB says, clamped to 0–3
+  const initialStep = Math.min(Math.max(profile.onboarding_step ?? 0, 0), 3);
+  const [step, setStep] = useState<0 | 1 | 2 | 3 | 4>(initialStep as 0 | 1 | 2 | 3 | 4);
   const [saving, setSaving] = useState(false);
-  const [data, setData] = useState<OnboardData>({
+  const [error, setError] = useState<string | null>(null);
+
+  // ── Step 1 state ────────────────────────────────────────────────────────────
+  const [biz, setBiz] = useState({
     businessName: profile.business_name ?? "",
     ownerName: profile.owner_name ?? "",
     phone: profile.phone ?? "",
-    email: profile.email ?? "",
-    serviceArea: profile.service_area ?? "",
-    minPrice: String(profile.min_price ?? 125),
-    targetMargin: String(profile.target_margin ?? 45),
-    laborRate: String(profile.labor_rate ?? 35),
+    minPrice: String(profile.min_price ?? 75),
+    targetMargin: String(profile.target_margin ?? 40),
+  });
+  const [bizErrors, setBizErrors] = useState({ businessName: false, ownerName: false });
+
+  // ── Step 2 state ────────────────────────────────────────────────────────────
+  const [labor, setLabor] = useState({
+    laborRate: String(profile.labor_rate ?? 25),
     crewSize: String(profile.default_crew_size ?? 2),
-    travelFee: String(profile.default_travel_fee ?? 25),
-    expiryDays: String(profile.quote_expiry_days ?? 7),
-    truckMin: String(tp?.min ?? 95),
-    truckEight: String(tp?.eight ?? 145),
-    truckQtr: String(tp?.qtr ?? 225),
-    truckHalf: String(tp?.half ?? 325),
-    truckThree: String(tp?.three ?? 475),
-    truckFull: String(tp?.full ?? 625),
+    travelFee: String(profile.default_travel_fee ?? 15),
   });
 
-  function set(key: keyof OnboardData, value: string) {
-    setData((d) => ({ ...d, [key]: value }));
+  // ── Step 3 state ────────────────────────────────────────────────────────────
+  const [truckPrices, setTruckPrices] = useState<Record<LoadId, string>>({
+    min:      String(tp?.min      ?? DEFAULT_TRUCK_PRICES.min),
+    eight:    String(tp?.eight    ?? DEFAULT_TRUCK_PRICES.eight),
+    qtr:      String(tp?.qtr      ?? DEFAULT_TRUCK_PRICES.qtr),
+    half:     String(tp?.half     ?? DEFAULT_TRUCK_PRICES.half),
+    three:    String(tp?.three    ?? DEFAULT_TRUCK_PRICES.three),
+    full:     String(tp?.full     ?? DEFAULT_TRUCK_PRICES.full),
+    multiple: String(tp?.multiple ?? DEFAULT_TRUCK_PRICES.multiple),
+  });
+  const [dumpFees, setDumpFees] = useState<Record<LoadId, string>>({
+    min:      String(fdf?.min      ?? DEFAULT_DUMP_FEES.min),
+    eight:    String(fdf?.eight    ?? DEFAULT_DUMP_FEES.eight),
+    qtr:      String(fdf?.qtr      ?? DEFAULT_DUMP_FEES.qtr),
+    half:     String(fdf?.half     ?? DEFAULT_DUMP_FEES.half),
+    three:    String(fdf?.three    ?? DEFAULT_DUMP_FEES.three),
+    full:     String(fdf?.full     ?? DEFAULT_DUMP_FEES.full),
+    multiple: String(fdf?.multiple ?? DEFAULT_DUMP_FEES.multiple),
+  });
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+
+  function buildTruckPricing() {
+    return {
+      min:      parseFloat(truckPrices.min)      || 95,
+      eight:    parseFloat(truckPrices.eight)    || 145,
+      qtr:      parseFloat(truckPrices.qtr)      || 225,
+      half:     parseFloat(truckPrices.half)     || 325,
+      three:    parseFloat(truckPrices.three)    || 475,
+      full:     parseFloat(truckPrices.full)     || 625,
+      multiple: parseFloat(truckPrices.multiple) || 850,
+    };
   }
 
-  function skipToDashboard() {
-    router.push("/dashboard");
+  function buildDumpFees() {
+    return {
+      min:      parseFloat(dumpFees.min)      || 15,
+      eight:    parseFloat(dumpFees.eight)    || 25,
+      qtr:      parseFloat(dumpFees.qtr)      || 40,
+      half:     parseFloat(dumpFees.half)     || 60,
+      three:    parseFloat(dumpFees.three)    || 80,
+      full:     parseFloat(dumpFees.full)     || 100,
+      multiple: parseFloat(dumpFees.multiple) || 175,
+    };
   }
 
-  async function handleFinish() {
+  async function supabaseUpdate(data: Record<string, unknown>) {
+    const { createClient } = await import("@/lib/supabase/client");
+    const supabase = createClient();
+    await supabase
+      .from("profiles")
+      .update({ ...data, updated_at: new Date().toISOString() })
+      .eq("id", userId);
+  }
+
+  // ── Step handlers ────────────────────────────────────────────────────────────
+
+  async function handleWelcomeNext() {
     setSaving(true);
     try {
-      const { createClient } = await import("@/lib/supabase/client");
-      const supabase = createClient();
-      await supabase
-        .from("profiles")
-        .update({
-          business_name: data.businessName || null,
-          owner_name: data.ownerName || null,
-          phone: data.phone || null,
-          email: data.email || null,
-          service_area: data.serviceArea || null,
-          min_price: parseFloat(data.minPrice) || 125,
-          target_margin: parseFloat(data.targetMargin) || 45,
-          labor_rate: parseFloat(data.laborRate) || 35,
-          default_crew_size: parseInt(data.crewSize) || 2,
-          default_travel_fee: parseFloat(data.travelFee) || 25,
-          quote_expiry_days: parseInt(data.expiryDays) || 7,
-          truckload_pricing: {
-            min: parseFloat(data.truckMin) || 95,
-            eight: parseFloat(data.truckEight) || 145,
-            qtr: parseFloat(data.truckQtr) || 225,
-            half: parseFloat(data.truckHalf) || 325,
-            three: parseFloat(data.truckThree) || 475,
-            full: parseFloat(data.truckFull) || 625,
-          } as TruckloadPricing,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
+      await supabaseUpdate({ onboarding_step: 1 });
+      setStep(1);
     } catch {
-      // Non-fatal — still proceed to dashboard
+      setStep(1); // proceed even if save fails
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleBizNext() {
+    setError(null);
+    if (!biz.businessName.trim() || !biz.ownerName.trim()) {
+      setBizErrors({
+        businessName: !biz.businessName.trim(),
+        ownerName: !biz.ownerName.trim(),
+      });
+      setError("Please fill in your business name and your name to continue.");
+      return;
+    }
+    setBizErrors({ businessName: false, ownerName: false });
+    setSaving(true);
+    try {
+      await supabaseUpdate({
+        business_name: biz.businessName.trim() || null,
+        owner_name: biz.ownerName.trim() || null,
+        phone: biz.phone.trim() || null,
+        min_price: parseFloat(biz.minPrice) || 75,
+        target_margin: parseFloat(biz.targetMargin) || 40,
+        onboarding_step: 2,
+      });
+      setStep(2);
+    } catch {
+      setStep(2);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleLaborNext() {
+    setSaving(true);
+    try {
+      await supabaseUpdate({
+        labor_rate: parseFloat(labor.laborRate) || 25,
+        default_crew_size: parseInt(labor.crewSize) || 2,
+        default_travel_fee: parseFloat(labor.travelFee) || 15,
+        onboarding_step: 3,
+      });
+      setStep(3);
+    } catch {
+      setStep(3);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleTrucksNext() {
+    setSaving(true);
+    try {
+      await supabaseUpdate({
+        truckload_pricing: buildTruckPricing(),
+        flat_dump_fees: buildDumpFees(),
+        dump_fee_mode: "flat_rate",
+        onboarding_step: 4,
+        onboarded_at: new Date().toISOString(),
+      });
+      setStep(4);
+    } catch {
+      setStep(4);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSkip() {
+    setSaving(true);
+    try {
+      await supabaseUpdate({
+        business_name: biz.businessName.trim() || null,
+        owner_name: biz.ownerName.trim() || null,
+        phone: biz.phone.trim() || null,
+        min_price: parseFloat(biz.minPrice) || 75,
+        target_margin: parseFloat(biz.targetMargin) || 40,
+        labor_rate: parseFloat(labor.laborRate) || 25,
+        default_crew_size: parseInt(labor.crewSize) || 2,
+        default_travel_fee: parseFloat(labor.travelFee) || 15,
+        truckload_pricing: buildTruckPricing(),
+        flat_dump_fees: buildDumpFees(),
+        dump_fee_mode: "flat_rate",
+        onboarding_step: 4,
+        onboarded_at: new Date().toISOString(),
+      });
+    } catch {
+      // non-fatal
     } finally {
       router.push("/dashboard");
     }
   }
 
-  if (step === "welcome") {
+  // ── Step 0 — Welcome ─────────────────────────────────────────────────────────
+
+  if (step === 0) {
     return (
-      <WelcomeStep
-        onNext={() => setStep("business")}
-        onSkip={skipToDashboard}
-      />
+      <div className="min-h-dvh flex flex-col bg-qm-bg px-6 pt-[64px] pb-10">
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          {/* Logo */}
+          <div
+            className="w-[76px] h-[76px] rounded-[22px] flex items-center justify-center mb-8 shadow-lg"
+            style={{ background: "var(--color-qm-accent)" }}
+          >
+            <svg width="44" height="44" viewBox="0 0 40 40" fill="none">
+              <path
+                d="M13 14h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H17l-4 3v-3h-1a2 2 0 0 1-2-2v-8c0-1.1.9-2 2-2z"
+                fill="white"
+                opacity="0.2"
+              />
+              <path
+                d="M19.5 16.5c-2.2 0-3.7 1.2-3.7 3 0 3.4 5.4 2 5.4 3.7 0 .6-.7 1-1.7 1s-1.8-.4-2.2-1.2"
+                stroke="white"
+                strokeWidth="1.8"
+                fill="none"
+                strokeLinecap="round"
+              />
+              <path
+                d="M19.5 15v1.5M19.5 23.2v1.5"
+                stroke="white"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+
+          <h1 className="text-[32px] font-bold text-qm-text tracking-[-1px] leading-none">
+            Welcome to QuoteMate
+          </h1>
+          <p className="text-[16px] text-qm-text-muted mt-4 leading-relaxed max-w-[300px]">
+            Let&apos;s set up your pricing in 2 minutes so your quotes are accurate from day one.
+          </p>
+
+          {/* What we'll set up */}
+          <div
+            className="w-full mt-8 rounded-[18px] px-5 py-4 text-left flex flex-col gap-3"
+            style={{
+              background: "var(--color-qm-surface)",
+              border: "1px solid var(--color-qm-border)",
+            }}
+          >
+            {[
+              "Business name & contact info",
+              "Labor rates & crew size",
+              "Truckload pricing per load size",
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div
+                  className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                  style={{ background: "var(--color-qm-accent-soft)" }}
+                >
+                  <Check
+                    size={11}
+                    strokeWidth={3}
+                    style={{ color: "var(--color-qm-accent-dark)" }}
+                  />
+                </div>
+                <span className="text-[14px] font-medium text-qm-text">
+                  {item}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="flex flex-col gap-3 pt-6">
+          <button
+            onClick={handleWelcomeNext}
+            disabled={saving}
+            className="w-full h-[56px] rounded-[16px] text-white text-[17px] font-semibold flex items-center justify-center gap-2"
+            style={{
+              background: "var(--color-qm-accent)",
+              opacity: saving ? 0.7 : 1,
+            }}
+          >
+            {saving ? "One moment…" : "Get started"}
+            {!saving && <ArrowRight size={18} strokeWidth={2.3} />}
+          </button>
+          <button
+            onClick={handleSkip}
+            disabled={saving}
+            className="w-full h-12 rounded-[14px] text-[15px] font-semibold text-qm-text-muted disabled:opacity-40"
+          >
+            Skip setup, go to dashboard
+          </button>
+        </div>
+      </div>
     );
   }
 
-  if (step === "business") {
+  // ── Step 4 — All set ─────────────────────────────────────────────────────────
+
+  if (step === 4) {
     return (
-      <BusinessStep
-        data={data}
-        onChange={set}
-        onBack={() => setStep("welcome")}
-        onSkip={skipToDashboard}
-        onNext={() => setStep("pricing")}
-      />
+      <div className="min-h-dvh flex flex-col items-center justify-center bg-qm-bg px-6 pb-10">
+        <div className="w-full max-w-sm flex flex-col items-center text-center gap-0">
+          {/* Check icon */}
+          <div
+            className="w-[80px] h-[80px] rounded-full flex items-center justify-center mb-6"
+            style={{ background: "var(--color-qm-accent-soft)" }}
+          >
+            <Check
+              size={36}
+              strokeWidth={2.5}
+              style={{ color: "var(--color-qm-accent)" }}
+            />
+          </div>
+
+          <h1 className="text-[30px] font-bold text-qm-text tracking-[-0.8px] leading-tight">
+            You&apos;re ready to quote
+          </h1>
+          <p className="text-[15px] text-qm-text-muted mt-3 leading-relaxed max-w-[280px]">
+            Your pricing is saved. Create your first quote in under 60 seconds.
+          </p>
+
+          {/* Summary chips */}
+          <div className="flex flex-wrap justify-center gap-2 mt-6">
+            {[
+              "Pricing saved",
+              "Labor rates set",
+              "Load sizes configured",
+            ].map((chip) => (
+              <div
+                key={chip}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1"
+                style={{
+                  background: "var(--color-qm-accent-soft)",
+                  border: "1px solid var(--color-qm-accent-soft)",
+                }}
+              >
+                <Check
+                  size={11}
+                  strokeWidth={3}
+                  style={{ color: "var(--color-qm-accent-dark)" }}
+                />
+                <span
+                  className="text-[12px] font-semibold"
+                  style={{ color: "var(--color-qm-accent-dark)" }}
+                >
+                  {chip}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={() => router.push("/new-quote")}
+            className="mt-10 w-full h-[56px] rounded-[16px] text-white text-[17px] font-semibold flex items-center justify-center gap-2"
+            style={{ background: "var(--color-qm-accent)" }}
+          >
+            Create my first quote
+            <ArrowRight size={18} strokeWidth={2.3} />
+          </button>
+
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="mt-3 text-[14px] font-semibold text-qm-text-muted"
+          >
+            Go to dashboard
+          </button>
+        </div>
+      </div>
     );
   }
 
-  if (step === "pricing") {
-    return (
-      <PricingStep
-        data={data}
-        onChange={set}
-        onBack={() => setStep("business")}
-        onSkip={skipToDashboard}
-        onNext={() => setStep("truck")}
-      />
-    );
+  // ── Steps 1–3 share a scrollable shell ──────────────────────────────────────
+
+  return (
+    <div className="min-h-dvh flex flex-col bg-qm-bg">
+      <ProgressHeader step={step as 1 | 2 | 3} onSkip={handleSkip} saving={saving} />
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto px-[22px] pb-6">
+        {step === 1 && (
+          <StepBusiness
+            biz={biz}
+            setBiz={setBiz}
+            errors={bizErrors}
+            error={error}
+          />
+        )}
+        {step === 2 && (
+          <StepLabor labor={labor} setLabor={setLabor} />
+        )}
+        {step === 3 && (
+          <StepTrucks
+            truckPrices={truckPrices}
+            setTruckPrices={setTruckPrices}
+            dumpFees={dumpFees}
+            setDumpFees={setDumpFees}
+          />
+        )}
+      </div>
+
+      {/* Sticky footer */}
+      <div
+        className="shrink-0 px-[22px] pt-4 pb-8"
+        style={{ borderTop: "1px solid var(--color-qm-border)" }}
+      >
+        {error && step === 1 && (
+          <div
+            className="mb-3 text-[13px] font-medium text-center rounded-[12px] py-[10px] px-3"
+            style={{
+              background: "var(--color-qm-danger-soft)",
+              color: "var(--color-qm-danger)",
+            }}
+          >
+            {error}
+          </div>
+        )}
+        <button
+          onClick={
+            step === 1
+              ? handleBizNext
+              : step === 2
+              ? handleLaborNext
+              : handleTrucksNext
+          }
+          disabled={saving}
+          className="w-full h-[54px] rounded-[16px] text-white text-[17px] font-semibold"
+          style={{
+            background: "var(--color-qm-accent)",
+            opacity: saving ? 0.7 : 1,
+          }}
+        >
+          {saving ? "Saving…" : step === 3 ? "Finish setup" : "Continue"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Step 1 — Business basics ─────────────────────────────────────────────────
+
+function StepBusiness({
+  biz,
+  setBiz,
+  errors,
+  error,
+}: {
+  biz: { businessName: string; ownerName: string; phone: string; minPrice: string; targetMargin: string };
+  setBiz: React.Dispatch<React.SetStateAction<typeof biz>>;
+  errors: { businessName: boolean; ownerName: boolean };
+  error: string | null;
+}) {
+  function set(key: keyof typeof biz) {
+    return (v: string) => setBiz((b) => ({ ...b, [key]: v }));
   }
 
   return (
-    <TruckStep
-      data={data}
-      onChange={set}
-      onBack={() => setStep("pricing")}
-      onSkip={skipToDashboard}
-      onFinish={handleFinish}
-      saving={saving}
-    />
+    <div className="flex flex-col gap-4">
+      <div className="mb-2">
+        <h2 className="text-[26px] font-bold text-qm-text tracking-[-0.6px] leading-tight">
+          Business basics
+        </h2>
+        <p className="text-[14px] text-qm-text-muted mt-1.5 leading-relaxed">
+          This shows on your quotes so customers know who they&apos;re working with.
+        </p>
+      </div>
+
+      <Field
+        label="Business name"
+        value={biz.businessName}
+        onChange={set("businessName")}
+        placeholder="Mike's Junk Removal"
+        required
+        hasError={errors.businessName}
+      />
+      <Field
+        label="Your name"
+        value={biz.ownerName}
+        onChange={set("ownerName")}
+        placeholder="Mike Henderson"
+        required
+        hasError={errors.ownerName}
+      />
+      <Field
+        label="Phone number"
+        value={biz.phone}
+        onChange={set("phone")}
+        placeholder="(555) 123-4567"
+        type="tel"
+        optional
+      />
+
+      {/* Divider */}
+      <div className="pt-1">
+        <div className="text-[11px] font-semibold text-qm-text-faint uppercase tracking-[0.5px] mb-3">
+          Pricing defaults
+        </div>
+        <div className="flex flex-col gap-4">
+          <Field
+            label="Minimum job price"
+            value={biz.minPrice}
+            onChange={set("minPrice")}
+            placeholder="75"
+            type="number"
+            inputMode="numeric"
+            prefix="$"
+          />
+          <Field
+            label="Target margin"
+            value={biz.targetMargin}
+            onChange={set("targetMargin")}
+            placeholder="40"
+            type="number"
+            inputMode="numeric"
+            suffix="%"
+          />
+        </div>
+      </div>
+
+      <p className="text-[12px] text-qm-text-faint text-center leading-relaxed">
+        You can update everything later in Settings.
+      </p>
+    </div>
+  );
+}
+
+// ─── Step 2 — Labor costs ─────────────────────────────────────────────────────
+
+function StepLabor({
+  labor,
+  setLabor,
+}: {
+  labor: { laborRate: string; crewSize: string; travelFee: string };
+  setLabor: React.Dispatch<React.SetStateAction<typeof labor>>;
+}) {
+  function set(key: keyof typeof labor) {
+    return (v: string) => setLabor((l) => ({ ...l, [key]: v }));
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="mb-2">
+        <h2 className="text-[26px] font-bold text-qm-text tracking-[-0.6px] leading-tight">
+          Labor costs
+        </h2>
+        <p className="text-[14px] text-qm-text-muted mt-1.5 leading-relaxed">
+          We use these to calculate your real cost on every quote.
+        </p>
+      </div>
+
+      <Field
+        label="Labor cost per person / hour"
+        value={labor.laborRate}
+        onChange={set("laborRate")}
+        placeholder="25"
+        type="number"
+        inputMode="numeric"
+        prefix="$"
+        suffix="/ hr"
+      />
+      <Field
+        label="Default crew size"
+        value={labor.crewSize}
+        onChange={set("crewSize")}
+        placeholder="2"
+        type="number"
+        inputMode="numeric"
+        suffix="people"
+      />
+      <Field
+        label="Default travel / fuel fee"
+        value={labor.travelFee}
+        onChange={set("travelFee")}
+        placeholder="15"
+        type="number"
+        inputMode="numeric"
+        prefix="$"
+      />
+
+      {/* Tip */}
+      <div
+        className="rounded-[14px] px-4 py-3"
+        style={{
+          background: "var(--color-qm-surface)",
+          border: "1px solid var(--color-qm-border)",
+        }}
+      >
+        <p className="text-[13px] text-qm-text-muted leading-relaxed">
+          <strong className="text-qm-text font-semibold">Tip:</strong> QuoteMate multiplies labor cost × crew size × estimated hours to calculate your total cost. You&apos;ll adjust hours per quote.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Step 3 — Truckload pricing ───────────────────────────────────────────────
+
+function StepTrucks({
+  truckPrices,
+  setTruckPrices,
+  dumpFees,
+  setDumpFees,
+}: {
+  truckPrices: Record<LoadId, string>;
+  setTruckPrices: React.Dispatch<React.SetStateAction<Record<LoadId, string>>>;
+  dumpFees: Record<LoadId, string>;
+  setDumpFees: React.Dispatch<React.SetStateAction<Record<LoadId, string>>>;
+}) {
+  function setPrice(id: LoadId, v: string) {
+    setTruckPrices((p) => ({ ...p, [id]: v }));
+  }
+  function setDump(id: LoadId, v: string) {
+    setDumpFees((p) => ({ ...p, [id]: v }));
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="mb-1">
+        <h2 className="text-[26px] font-bold text-qm-text tracking-[-0.6px] leading-tight">
+          Truckload pricing
+        </h2>
+        <p className="text-[14px] text-qm-text-muted mt-1.5 leading-relaxed">
+          Set your customer price and disposal fee for each load size.
+        </p>
+      </div>
+
+      {/* Table */}
+      <div
+        className="rounded-[18px] overflow-hidden"
+        style={{ border: "1px solid var(--color-qm-border)" }}
+      >
+        {/* Header */}
+        <div
+          className="grid grid-cols-[1fr_76px_76px] gap-2 px-4 py-2"
+          style={{ background: "var(--color-qm-surface-alt)", borderBottom: "1px solid var(--color-qm-border)" }}
+        >
+          <div className="text-[11px] font-semibold text-qm-text-faint uppercase tracking-[0.4px]">
+            Load size
+          </div>
+          <div className="text-[11px] font-semibold text-qm-text-faint uppercase tracking-[0.4px] text-center">
+            Price
+          </div>
+          <div className="text-[11px] font-semibold text-qm-text-faint uppercase tracking-[0.4px] text-center">
+            Disposal
+          </div>
+        </div>
+
+        {/* Rows */}
+        {LOAD_SIZES.map((size, i) => (
+          <div
+            key={size.id}
+            className="grid grid-cols-[1fr_76px_76px] gap-2 items-center px-4 py-[10px] bg-qm-surface"
+            style={{
+              borderTop: i > 0 ? "1px solid var(--color-qm-border)" : undefined,
+            }}
+          >
+            {/* Label */}
+            <div>
+              <div className="text-[13px] font-semibold text-qm-text leading-tight">
+                {size.label}
+              </div>
+              <div className="text-[11px] text-qm-text-faint mt-[1px] truncate">
+                {size.hint}
+              </div>
+            </div>
+
+            {/* Price input */}
+            <div
+              className="flex items-center rounded-[9px] px-[8px] h-[36px]"
+              style={{ border: "1px solid var(--color-qm-border)", background: "var(--color-qm-bg)" }}
+            >
+              <span className="text-qm-text-muted text-[13px] mr-0.5 shrink-0">$</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={truckPrices[size.id]}
+                onChange={(e) => setPrice(size.id, e.target.value)}
+                className="flex-1 bg-transparent border-none outline-none text-[13px] font-semibold text-qm-text min-w-0 text-right"
+              />
+            </div>
+
+            {/* Dump fee input */}
+            <div
+              className="flex items-center rounded-[9px] px-[8px] h-[36px]"
+              style={{ border: "1px solid var(--color-qm-border)", background: "var(--color-qm-bg)" }}
+            >
+              <span className="text-qm-text-muted text-[13px] mr-0.5 shrink-0">$</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={dumpFees[size.id]}
+                onChange={(e) => setDump(size.id, e.target.value)}
+                className="flex-1 bg-transparent border-none outline-none text-[13px] font-semibold text-qm-text min-w-0 text-right"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-[12px] text-qm-text-faint text-center leading-relaxed">
+        You can always update these later in Settings.
+      </p>
+    </div>
   );
 }

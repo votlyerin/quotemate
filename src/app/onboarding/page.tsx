@@ -31,8 +31,8 @@ export default async function OnboardingPage() {
 
       if (data) {
         profile = data as Profile;
-        // Already onboarded — skip straight to dashboard
-        if (profile.business_name) redirect("/dashboard");
+        // Already completed onboarding → go to dashboard
+        if (profile.onboarded_at) redirect("/dashboard");
       }
     } catch {
       redirect("/login");

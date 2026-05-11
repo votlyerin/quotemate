@@ -33,12 +33,16 @@ export default async function AuthenticatedLayout({
       const { data: profile } = await supabase
         .from("profiles")
         .select(
-          "subscription_status, trial_ends_at, stripe_customer_id"
+          "subscription_status, trial_ends_at, stripe_customer_id, onboarded_at"
         )
         .eq("id", user.id)
         .single();
 
       if (profile) {
+        // Redirect un-onboarded users to the setup flow
+        if (!profile.onboarded_at) {
+          redirect("/onboarding");
+        }
         subStatus = getEffectiveSubStatus(profile as Partial<Profile>);
         daysLeft = trialDaysLeft(profile.trial_ends_at);
       }

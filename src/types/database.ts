@@ -27,6 +27,9 @@ export interface Profile {
   flat_dump_fees: Record<string, number> | null;
   item_surcharges: Record<string, number>;
   complexity_fees: Record<string, number>;
+  // Onboarding
+  onboarding_step: number | null;
+  onboarded_at: string | null;
   // Subscription
   stripe_customer_id: string | null;
   subscription_status: "trialing" | "active" | "past_due" | "canceled" | "expired" | null;
