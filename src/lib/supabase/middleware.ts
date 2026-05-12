@@ -36,6 +36,7 @@ export async function updateSession(request: NextRequest) {
 
     if (
       !user &&
+      request.nextUrl.pathname !== "/" &&
       !request.nextUrl.pathname.startsWith("/login") &&
       !request.nextUrl.pathname.startsWith("/signup") &&
       !request.nextUrl.pathname.startsWith("/auth") &&
@@ -48,8 +49,9 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
   } catch {
-    // Auth check failed — redirect to login
+    // Auth check failed — redirect to login, but not from the landing page
     if (
+      request.nextUrl.pathname !== "/" &&
       !request.nextUrl.pathname.startsWith("/login") &&
       !request.nextUrl.pathname.startsWith("/signup") &&
       !request.nextUrl.pathname.startsWith("/forgot-password") &&
