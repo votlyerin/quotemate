@@ -9,17 +9,13 @@ function isSupabaseConfigured() {
 
 export default async function Home() {
   if (isSupabaseConfigured()) {
-    try {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      if (user) {
-        redirect("/dashboard");
-      }
-    } catch {
-      // Supabase unreachable — fall through to landing page
+    if (user) {
+      redirect("/dashboard");
     }
   }
 
