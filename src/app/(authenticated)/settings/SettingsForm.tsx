@@ -255,11 +255,16 @@ export function SettingsForm({
 
   async function handleSubscribe() {
     setBillingLoading(true);
+    setError(null);
     try {
-      const res = await fetch("/api/stripe/checkout", { method: "POST" });
+      const res = await fetch("/api/activate-trial", { method: "POST" });
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else setError(data.error || "Couldn't open checkout.");
+      if (data.ok) {
+        // Refresh server data so subscription status updates immediately
+        router.refresh();
+      } else {
+        setError(data.error || "Couldn't start trial — please try again.");
+      }
     } catch {
       setError("Network error — please try again.");
     } finally {
@@ -589,7 +594,7 @@ export function SettingsForm({
                     Plan
                   </div>
                   <div className="text-[15px] text-qm-text font-semibold">
-                    QuoteMate Pro · $19/mo
+                    {isPro ? "QuoteMate Pro · $19/mo" : "QuoteMate Free"}
                   </div>
                 </div>
                 {/* Status badge */}
