@@ -83,9 +83,10 @@ async function applyPlan(
       .update({ subscription_status: "trialing", trial_ends_at: trialEnd })
       .eq("id", userId);
   } else {
+    // Also clear trial_ends_at so the trial banner never appears for free accounts
     await supabase
       .from("profiles")
-      .update({ subscription_status: "expired" })
+      .update({ subscription_status: "expired", trial_ends_at: null })
       .eq("id", userId);
   }
 }

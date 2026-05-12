@@ -63,12 +63,16 @@ export default async function AuthenticatedLayout({
     );
   }
 
-  // Trial ending banner — only for free-tier users, not for active subscribers or trial users
+  // isPro controls feature access — trial_ending users still have full Pro access
   const isPro =
     subStatus === "active" ||
     subStatus === "trialing" ||
     subStatus === "trial_ending";
-  const showTrialBanner = !isPro && daysLeft > 0;
+
+  // Banner only appears when a Pro trial is specifically in its last 5 days
+  // (trial_ending). Never shows for free/expired users even if trial_ends_at
+  // happens to be set by the DB trigger.
+  const showTrialBanner = subStatus === "trial_ending";
 
   return (
     <div className="min-h-dvh bg-qm-bg">

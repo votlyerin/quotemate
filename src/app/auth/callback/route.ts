@@ -40,10 +40,12 @@ export async function GET(request: Request) {
               })
               .eq("id", userId);
           } else {
-            // Free tier — mark as expired so quota limits apply immediately
+            // Free tier — mark as expired so quota limits apply immediately.
+            // Also clear trial_ends_at: the DB trigger sets it for all new
+            // users, which would cause the trial banner to appear for free accounts.
             await supabase
               .from("profiles")
-              .update({ subscription_status: "expired" })
+              .update({ subscription_status: "expired", trial_ends_at: null })
               .eq("id", userId);
           }
         }
