@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { LandingPage } from "./landing/LandingPage";
 
 function isSupabaseConfigured() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -18,9 +19,9 @@ export default async function Home() {
         redirect("/dashboard");
       }
     } catch {
-      // Supabase unreachable
+      // Supabase unreachable — fall through to landing page
     }
   }
 
-  redirect("/login");
+  return <LandingPage />;
 }
