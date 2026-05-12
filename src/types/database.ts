@@ -31,6 +31,7 @@ export interface Profile {
   onboarding_step: number | null;
   onboarded_at: string | null;
   // Subscription
+  has_used_trial: boolean;
   stripe_customer_id: string | null;
   subscription_status: "trialing" | "active" | "past_due" | "canceled" | "expired" | null;
   subscription_id: string | null;

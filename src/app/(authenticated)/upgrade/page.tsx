@@ -31,6 +31,7 @@ export default async function UpgradePage() {
   }
 
   const tier = getTier(profile);
+  const hasUsedTrial = profile?.has_used_trial ?? false;
 
-  return <UpgradePageContent tier={tier} />;
+  return <UpgradePageContent tier={tier} hasUsedTrial={hasUsedTrial} />;
 }

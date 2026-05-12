@@ -123,7 +123,13 @@ function Cell({
   );
 }
 
-export function UpgradePageContent({ tier }: { tier: "free" | "pro" }) {
+export function UpgradePageContent({
+  tier,
+  hasUsedTrial = false,
+}: {
+  tier: "free" | "pro";
+  hasUsedTrial?: boolean;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -232,8 +238,8 @@ export function UpgradePageContent({ tier }: { tier: "free" | "pro" }) {
           </div>
         ))}
 
-        {/* Trial badge */}
-        {!isPro && (
+        {/* Trial badge — only for first-time trial eligibles */}
+        {!isPro && !hasUsedTrial && (
           <div
             className="rounded-[14px] px-[14px] py-[12px] flex items-center gap-3 mb-5"
             style={{ background: "var(--color-qm-accent-soft)" }}
@@ -274,7 +280,11 @@ export function UpgradePageContent({ tier }: { tier: "free" | "pro" }) {
               }}
             >
               <Zap size={17} strokeWidth={2.3} />
-              {loading ? "Opening checkout…" : "Start free trial — no charge for 14 days"}
+              {loading
+                ? "Opening checkout…"
+                : hasUsedTrial
+                ? "Upgrade to Pro — $19/month"
+                : "Start free trial — no charge for 14 days"}
             </button>
             {error && (
               <div
@@ -288,7 +298,9 @@ export function UpgradePageContent({ tier }: { tier: "free" | "pro" }) {
               </div>
             )}
             <p className="text-center text-[11.5px] text-qm-text-faint mt-3 leading-relaxed">
-              Billed monthly · Cancel any time · No contracts
+              {hasUsedTrial
+                ? "Billed immediately · Cancel any time · No contracts"
+                : "Billed monthly · Cancel any time · No contracts"}
             </p>
           </>
         )}

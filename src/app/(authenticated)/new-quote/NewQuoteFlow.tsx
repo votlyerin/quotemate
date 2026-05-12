@@ -1581,6 +1581,7 @@ export function NewQuoteFlow({
           <ProUpgradePrompt
             title={upgradePrompt.title}
             body={upgradePrompt.body}
+            hasUsedTrial={profile?.has_used_trial ?? false}
             onClose={() => {
               setUpgradePrompt(null);
               // If quota was hit we've already saved — go to quotes
@@ -1940,7 +1941,10 @@ export function NewQuoteFlow({
       {sendUpgradeOpen && (
         <ProUpgradePrompt
           title="Send quotes directly from QuoteMate"
-          body="Send professional quotes directly from QuoteMate with Pro. Start your 14-day free trial — no charge until day 15."
+          body={profile?.has_used_trial
+            ? "Send professional quotes directly from QuoteMate with Pro."
+            : "Send professional quotes directly from QuoteMate with Pro. Start your 14-day free trial — no charge until day 15."}
+          hasUsedTrial={profile?.has_used_trial ?? false}
           onClose={() => setSendUpgradeOpen(false)}
         />
       )}
@@ -1950,6 +1954,7 @@ export function NewQuoteFlow({
         <ProUpgradePrompt
           title={upgradePrompt.title}
           body={upgradePrompt.body}
+          hasUsedTrial={profile?.has_used_trial ?? false}
           onClose={() => {
             setUpgradePrompt(null);
             if (isQuoteLimitHit || (!isPro && monthlyQuoteCount >= 4)) {

@@ -13,10 +13,10 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch profile to check for existing Stripe customer
+    // Fetch profile to check for existing Stripe customer and trial eligibility
     const { data: profile } = await supabase
       .from("profiles")
-      .select("stripe_customer_id, email, owner_name, business_name")
+      .select("stripe_customer_id, email, owner_name, business_name, has_used_trial")
       .eq("id", user.id)
       .single();
 
@@ -41,6 +41,11 @@ export async function POST() {
         .eq("id", user.id);
     }
 
+    // Only offer the 14-day trial to first-time subscribers.
+    // has_used_trial is set to true by the webhook the moment any trial checkout
+    // completes — it never resets, so returning users pay immediately.
+    const isFirstTrial = !profile?.has_used_trial;
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
@@ -50,9 +55,11 @@ export async function POST() {
           quantity: 1,
         },
       ],
-      subscription_data: {
-        trial_period_days: 14,
-      },
+      ...(isFirstTrial && {
+        subscription_data: {
+          trial_period_days: 14,
+        },
+      }),
       client_reference_id: user.id,
       success_url: `${appUrl}/dashboard?checkout=success`,
       cancel_url: `${appUrl}/settings`,

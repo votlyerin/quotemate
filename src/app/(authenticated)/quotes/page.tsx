@@ -26,7 +26,7 @@ export default async function QuotesPage() {
         const { data: profile } = await supabase
           .from("profiles")
           .select(
-            "subscription_status, trial_ends_at, stripe_customer_id"
+            "subscription_status, trial_ends_at, stripe_customer_id, has_used_trial"
           )
           .eq("id", user.id)
           .single();
@@ -49,12 +49,15 @@ export default async function QuotesPage() {
     }
   }
 
+  const hasUsedTrial = (profile as { has_used_trial?: boolean } | null)?.has_used_trial ?? false;
+
   return (
     <QuotesList
       quotes={quotes}
       total={total}
       tier={tier}
       freeHistoryLimit={FREE_HISTORY_LIMIT}
+      hasUsedTrial={hasUsedTrial}
     />
   );
 }

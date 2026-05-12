@@ -174,6 +174,7 @@ export function SettingsForm({
   const hasStripeCustomer = !!profile.stripe_customer_id;
   const tier = getTier(profile);
   const isPro = tier === "pro";
+  const hasUsedTrial = profile.has_used_trial ?? false;
 
   function set(key: keyof typeof form) {
     return (v: string) => setForm((f) => ({ ...f, [key]: v }));
@@ -674,7 +675,11 @@ export function SettingsForm({
                   }}
                 >
                   <Zap size={16} strokeWidth={2.3} />
-                  {billingLoading ? "Opening checkout…" : "Start free trial — no charge for 14 days"}
+                  {billingLoading
+                ? "Opening checkout…"
+                : hasUsedTrial
+                ? "Upgrade to Pro — $19/month"
+                : "Start free trial — no charge for 14 days"}
                 </button>
               )}
 
@@ -822,7 +827,10 @@ export function SettingsForm({
       {showUpgrade && (
         <ProUpgradePrompt
           title="Customize surcharges with Pro"
-          body="Upgrade to Pro to set your own fees for stairs, basement, long carry, heavy items, and rush jobs. Start your 14-day free trial — no charge until day 15."
+          body={hasUsedTrial
+            ? "Upgrade to Pro to set your own fees for stairs, basement, long carry, heavy items, and rush jobs."
+            : "Upgrade to Pro to set your own fees for stairs, basement, long carry, heavy items, and rush jobs. Start your 14-day free trial — no charge until day 15."}
+          hasUsedTrial={hasUsedTrial}
           onClose={() => setShowUpgrade(false)}
         />
       )}

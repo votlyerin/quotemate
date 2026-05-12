@@ -44,6 +44,9 @@ export async function POST(request: Request) {
             stripe_customer_id: customerId,
             subscription_id: subscriptionId,
             subscription_status: "active",
+            // Mark trial as used the moment checkout completes — never resets,
+            // even if the user later cancels or churns.
+            has_used_trial: true,
             updated_at: new Date().toISOString(),
           })
           .eq("id", userId);

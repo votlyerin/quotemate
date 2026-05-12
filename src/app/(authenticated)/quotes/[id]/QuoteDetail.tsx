@@ -619,7 +619,10 @@ export function QuoteDetail({
       {showUpgrade && (
         <ProUpgradePrompt
           title="Track quote status with Pro"
-          body="Upgrade to Pro to mark quotes as Sent, Accepted, or Declined and track your conversion rate. Start your 14-day free trial — no charge until day 15."
+          body={profile?.has_used_trial
+            ? "Upgrade to Pro to mark quotes as Sent, Accepted, or Declined and track your conversion rate."
+            : "Upgrade to Pro to mark quotes as Sent, Accepted, or Declined and track your conversion rate. Start your 14-day free trial — no charge until day 15."}
+          hasUsedTrial={profile?.has_used_trial ?? false}
           onClose={() => setShowUpgrade(false)}
         />
       )}

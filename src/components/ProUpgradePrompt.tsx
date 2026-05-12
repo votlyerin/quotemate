@@ -6,6 +6,7 @@ import { Zap, X, Check } from "lucide-react";
 interface ProUpgradePromptProps {
   title?: string;
   body?: string;
+  hasUsedTrial?: boolean;
   onClose: () => void;
 }
 
@@ -20,9 +21,13 @@ const PRO_FEATURES = [
 
 export function ProUpgradePrompt({
   title = "Unlock QuoteMate Pro",
-  body = "Start your 14-day free trial — no charge until day 15. Cancel any time.",
+  body,
+  hasUsedTrial = false,
   onClose,
 }: ProUpgradePromptProps) {
+  const defaultBody = hasUsedTrial
+    ? "Upgrade to Pro for unlimited quotes, full history, and all Pro features. $19/month — cancel any time."
+    : "Start your 14-day free trial — no charge until day 15. Cancel any time.";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,7 +88,7 @@ export function ProUpgradePrompt({
           {title}
         </div>
         <div className="mt-2 text-[14px] text-qm-text-muted leading-[1.45]">
-          {body}
+          {body ?? defaultBody}
         </div>
 
         {/* Feature list */}
@@ -126,7 +131,11 @@ export function ProUpgradePrompt({
           style={{ background: "var(--color-qm-accent)" }}
         >
           <Zap size={16} strokeWidth={2.3} />
-          {loading ? "Opening checkout…" : "Start free trial — no charge for 14 days"}
+          {loading
+            ? "Opening checkout…"
+            : hasUsedTrial
+            ? "Upgrade to Pro — $19/month"
+            : "Start free trial — no charge for 14 days"}
         </button>
 
         <button

@@ -11,7 +11,13 @@ const FEATURES = [
   "Custom truckload & complexity pricing",
 ];
 
-export function PaywallGate({ isPastDue = false }: { isPastDue?: boolean }) {
+export function PaywallGate({
+  isPastDue = false,
+  hasUsedTrial = false,
+}: {
+  isPastDue?: boolean;
+  hasUsedTrial?: boolean;
+}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -185,7 +191,11 @@ export function PaywallGate({ isPastDue = false }: { isPastDue?: boolean }) {
             }}
           >
             <Zap size={18} strokeWidth={2.3} />
-            {loading ? "Opening checkout…" : "Start free trial — no charge for 14 days"}
+            {loading
+              ? "Opening checkout…"
+              : hasUsedTrial
+              ? "Upgrade to Pro — $19/month"
+              : "Start free trial — no charge for 14 days"}
           </button>
         )}
 
