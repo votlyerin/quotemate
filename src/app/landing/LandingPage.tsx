@@ -291,11 +291,11 @@ function Hero() {
 
           <div className="flex flex-col sm:flex-row gap-3">
             <Link
-              href="/signup"
+              href="/signup?plan=pro"
               className="h-14 px-7 rounded-[16px] text-[16px] font-semibold text-white flex items-center justify-center"
               style={{ background: "var(--color-qm-accent)" }}
             >
-              Start free — no card needed
+              Start free trial — no card needed
             </Link>
             <a
               href="#how-it-works"
@@ -667,7 +667,7 @@ function PricingSection() {
             </ul>
 
             <Link
-              href="/signup"
+              href="/signup?plan=free"
               className="w-full h-12 rounded-[14px] text-[15px] font-semibold flex items-center justify-center"
               style={{
                 border: "1.5px solid var(--color-qm-border-strong)",
@@ -759,7 +759,7 @@ function PricingSection() {
             </ul>
 
             <Link
-              href="/signup"
+              href="/signup?plan=pro"
               className="w-full h-12 rounded-[14px] text-[15px] font-semibold text-white flex items-center justify-center relative z-10"
               style={{ background: "var(--color-qm-accent)" }}
             >
@@ -795,7 +795,7 @@ function FinalCTA() {
           with confidence — and stop leaving money on the table.
         </p>
         <Link
-          href="/signup"
+          href="/signup?plan=free"
           className="inline-flex h-14 px-10 rounded-[16px] text-[16px] font-semibold text-white items-center justify-center"
           style={{ background: "var(--color-qm-accent)" }}
         >
