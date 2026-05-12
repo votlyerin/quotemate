@@ -196,6 +196,12 @@ export function OnboardingFlow({
     full:     String(fdf?.full     ?? DEFAULT_DUMP_FEES.full),
     multiple: String(fdf?.multiple ?? DEFAULT_DUMP_FEES.multiple),
   });
+  const [dumpMode, setDumpMode] = useState<"per_ton" | "flat_rate">(
+    (profile.dump_fee_mode as "per_ton" | "flat_rate") ?? "per_ton"
+  );
+  const [dumpFeePerTon, setDumpFeePerTon] = useState(
+    String(profile.dump_fee_per_ton ?? "")
+  );
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -297,8 +303,9 @@ export function OnboardingFlow({
     try {
       await supabaseUpdate({
         truckload_pricing: buildTruckPricing(),
-        flat_dump_fees: buildDumpFees(),
-        dump_fee_mode: "flat_rate",
+        dump_fee_mode: dumpMode,
+        dump_fee_per_ton: dumpMode === "per_ton" ? (parseFloat(dumpFeePerTon) || null) : null,
+        flat_dump_fees: dumpMode === "flat_rate" ? buildDumpFees() : null,
         onboarding_step: 4,
         onboarded_at: new Date().toISOString(),
       });
@@ -323,8 +330,9 @@ export function OnboardingFlow({
         default_crew_size: parseInt(labor.crewSize) || 2,
         default_travel_fee: parseFloat(labor.travelFee) || 15,
         truckload_pricing: buildTruckPricing(),
-        flat_dump_fees: buildDumpFees(),
-        dump_fee_mode: "flat_rate",
+        dump_fee_mode: dumpMode,
+        dump_fee_per_ton: dumpMode === "per_ton" ? (parseFloat(dumpFeePerTon) || null) : null,
+        flat_dump_fees: dumpMode === "flat_rate" ? buildDumpFees() : null,
         onboarding_step: 4,
         onboarded_at: new Date().toISOString(),
       });
@@ -531,6 +539,10 @@ export function OnboardingFlow({
           <StepTrucks
             truckPrices={truckPrices}
             setTruckPrices={setTruckPrices}
+            dumpMode={dumpMode}
+            setDumpMode={setDumpMode}
+            dumpFeePerTon={dumpFeePerTon}
+            setDumpFeePerTon={setDumpFeePerTon}
             dumpFees={dumpFees}
             setDumpFees={setDumpFees}
           />
@@ -731,45 +743,49 @@ function StepLabor({
   );
 }
 
-// ─── Step 3 — Truckload pricing ───────────────────────────────────────────────
+// ─── Step 3 — Truckload pricing & disposal fees ───────────────────────────────
 
 function StepTrucks({
   truckPrices,
   setTruckPrices,
+  dumpMode,
+  setDumpMode,
+  dumpFeePerTon,
+  setDumpFeePerTon,
   dumpFees,
   setDumpFees,
 }: {
   truckPrices: Record<LoadId, string>;
   setTruckPrices: React.Dispatch<React.SetStateAction<Record<LoadId, string>>>;
+  dumpMode: "per_ton" | "flat_rate";
+  setDumpMode: React.Dispatch<React.SetStateAction<"per_ton" | "flat_rate">>;
+  dumpFeePerTon: string;
+  setDumpFeePerTon: React.Dispatch<React.SetStateAction<string>>;
   dumpFees: Record<LoadId, string>;
   setDumpFees: React.Dispatch<React.SetStateAction<Record<LoadId, string>>>;
 }) {
-  function setPrice(id: LoadId, v: string) {
-    setTruckPrices((p) => ({ ...p, [id]: v }));
-  }
-  function setDump(id: LoadId, v: string) {
-    setDumpFees((p) => ({ ...p, [id]: v }));
-  }
-
   return (
     <div className="flex flex-col gap-4">
       <div className="mb-1">
         <h2 className="text-[26px] font-bold text-qm-text tracking-[-0.6px] leading-tight">
-          Truckload pricing
+          Pricing & disposal fees
         </h2>
         <p className="text-[14px] text-qm-text-muted mt-1.5 leading-relaxed">
-          Set your customer price and disposal fee for each load size.
+          Set your base price for each load size, then choose how you calculate disposal.
         </p>
       </div>
 
-      {/* Table */}
+      {/* ── Truck pricing table ─────────────────────────────────────────────── */}
+      <div className="text-[11px] font-semibold text-qm-text-faint uppercase tracking-[0.5px] -mb-1">
+        Truckload prices
+      </div>
       <div
         className="rounded-[18px] overflow-hidden"
         style={{ border: "1px solid var(--color-qm-border)" }}
       >
         {/* Header */}
         <div
-          className="grid grid-cols-[1fr_76px_76px] gap-2 px-4 py-2"
+          className="grid grid-cols-[1fr_90px] gap-2 px-4 py-2"
           style={{ background: "var(--color-qm-surface-alt)", borderBottom: "1px solid var(--color-qm-border)" }}
         >
           <div className="text-[11px] font-semibold text-qm-text-faint uppercase tracking-[0.4px]">
@@ -778,21 +794,15 @@ function StepTrucks({
           <div className="text-[11px] font-semibold text-qm-text-faint uppercase tracking-[0.4px] text-center">
             Price
           </div>
-          <div className="text-[11px] font-semibold text-qm-text-faint uppercase tracking-[0.4px] text-center">
-            Disposal
-          </div>
         </div>
 
         {/* Rows */}
         {LOAD_SIZES.map((size, i) => (
           <div
             key={size.id}
-            className="grid grid-cols-[1fr_76px_76px] gap-2 items-center px-4 py-[10px] bg-qm-surface"
-            style={{
-              borderTop: i > 0 ? "1px solid var(--color-qm-border)" : undefined,
-            }}
+            className="grid grid-cols-[1fr_90px] gap-2 items-center px-4 py-[10px] bg-qm-surface"
+            style={{ borderTop: i > 0 ? "1px solid var(--color-qm-border)" : undefined }}
           >
-            {/* Label */}
             <div>
               <div className="text-[13px] font-semibold text-qm-text leading-tight">
                 {size.label}
@@ -801,8 +811,6 @@ function StepTrucks({
                 {size.hint}
               </div>
             </div>
-
-            {/* Price input */}
             <div
               className="flex items-center rounded-[9px] px-[8px] h-[36px]"
               style={{ border: "1px solid var(--color-qm-border)", background: "var(--color-qm-bg)" }}
@@ -812,28 +820,86 @@ function StepTrucks({
                 type="number"
                 inputMode="numeric"
                 value={truckPrices[size.id]}
-                onChange={(e) => setPrice(size.id, e.target.value)}
-                className="flex-1 bg-transparent border-none outline-none text-[13px] font-semibold text-qm-text min-w-0 text-right"
-              />
-            </div>
-
-            {/* Dump fee input */}
-            <div
-              className="flex items-center rounded-[9px] px-[8px] h-[36px]"
-              style={{ border: "1px solid var(--color-qm-border)", background: "var(--color-qm-bg)" }}
-            >
-              <span className="text-qm-text-muted text-[13px] mr-0.5 shrink-0">$</span>
-              <input
-                type="number"
-                inputMode="numeric"
-                value={dumpFees[size.id]}
-                onChange={(e) => setDump(size.id, e.target.value)}
+                onChange={(e) => setTruckPrices((p) => ({ ...p, [size.id]: e.target.value }))}
                 className="flex-1 bg-transparent border-none outline-none text-[13px] font-semibold text-qm-text min-w-0 text-right"
               />
             </div>
           </div>
         ))}
       </div>
+
+      {/* ── Disposal / dump fee ─────────────────────────────────────────────── */}
+      <div className="text-[11px] font-semibold text-qm-text-faint uppercase tracking-[0.5px] mt-1 -mb-1">
+        Disposal / dump fee
+      </div>
+
+      {/* Mode toggle */}
+      <div className="flex rounded-[12px] bg-qm-surface border border-qm-border overflow-hidden">
+        {(["per_ton", "flat_rate"] as const).map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => setDumpMode(mode)}
+            className={`flex-1 py-[10px] text-[13px] font-semibold transition-colors ${
+              dumpMode === mode ? "bg-qm-accent text-white" : "text-qm-text-muted"
+            }`}
+          >
+            {mode === "per_ton" ? "Per ton" : "Flat rate"}
+          </button>
+        ))}
+      </div>
+
+      {dumpMode === "per_ton" ? (
+        <div>
+          <Field
+            label="Dump fee per ton"
+            value={dumpFeePerTon}
+            onChange={setDumpFeePerTon}
+            placeholder="75"
+            type="number"
+            inputMode="decimal"
+            prefix="$"
+            suffix="/ ton"
+            optional
+          />
+          <p className="mt-[6px] text-[11.5px] text-qm-text-faint leading-snug px-1">
+            Auto-calculates per load: min 0.1t · ⅛ 0.25t · ¼ 0.5t · ½ 1.0t · ¾ 1.5t · full 2.0t · multiple 4.0t
+          </p>
+        </div>
+      ) : (
+        <div>
+          <p className="text-[12px] text-qm-text-faint mb-2 px-1">
+            Set a fixed disposal fee for each load size
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { key: "min",      label: "Minimum" },
+              { key: "eight",    label: "⅛ truck" },
+              { key: "qtr",      label: "¼ truck" },
+              { key: "half",     label: "½ truck" },
+              { key: "three",    label: "¾ truck" },
+              { key: "full",     label: "Full truck" },
+              { key: "multiple", label: "Multiple" },
+            ] as const).map(({ key, label }) => (
+              <div key={key}>
+                <div className="text-[12px] font-medium text-qm-text-muted mb-[6px]">
+                  {label}
+                </div>
+                <div className="flex items-center bg-qm-surface border border-qm-border rounded-[12px] px-3 h-[46px]">
+                  <span className="text-qm-text-muted text-[15px] font-medium mr-1 shrink-0">$</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={dumpFees[key]}
+                    onChange={(e) => setDumpFees((f) => ({ ...f, [key]: e.target.value }))}
+                    className="flex-1 bg-transparent border-none outline-none text-[15px] text-qm-text min-w-0"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <p className="text-[12px] text-qm-text-faint text-center leading-relaxed">
         You can always update these later in Settings.
