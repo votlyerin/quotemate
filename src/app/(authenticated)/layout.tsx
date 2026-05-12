@@ -72,7 +72,7 @@ export default async function AuthenticatedLayout({
   // Banner only appears when a Pro trial is specifically in its last 5 days
   // (trial_ending). Never shows for free/expired users even if trial_ends_at
   // happens to be set by the DB trigger.
-  const showTrialBanner = subStatus === "trial_ending";
+  const showTrialBanner = subStatus === "trialing" || subStatus === "trial_ending";
 
   return (
     <div className="min-h-dvh bg-qm-bg">

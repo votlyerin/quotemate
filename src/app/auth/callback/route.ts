@@ -27,7 +27,17 @@ export async function GET(request: Request) {
           .eq("id", userId)
           .single();
 
-        if (!profile?.subscription_status) {
+        // Only apply signup plan if the account isn't already managed by Stripe
+        // (active paid subscription or past_due). This protects existing subscribers
+        // who do a password reset — their plan from original signup metadata won't
+        // overwrite their live subscription status.
+        // We DO overwrite null, "expired", or "trialing" — all pre-Stripe states —
+        // so it works whether the DB trigger defaults to null or "expired".
+        const currentStatus = profile?.subscription_status;
+        const isStripeManaged =
+          currentStatus === "active" || currentStatus === "past_due";
+
+        if (!isStripeManaged) {
           if (plan === "pro") {
             const trialEnd = new Date(
               Date.now() + 14 * 24 * 60 * 60 * 1000
@@ -41,7 +51,7 @@ export async function GET(request: Request) {
               .eq("id", userId);
           } else {
             // Free tier — mark as expired so quota limits apply immediately.
-            // Also clear trial_ends_at: the DB trigger sets it for all new
+            // Also clear trial_ends_at: the DB trigger may set it for all new
             // users, which would cause the trial banner to appear for free accounts.
             await supabase
               .from("profiles")
