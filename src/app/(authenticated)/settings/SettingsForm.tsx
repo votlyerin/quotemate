@@ -635,11 +635,11 @@ export function SettingsForm({
                   <span
                     className="text-[12px] font-semibold px-2.5 py-1 rounded-full"
                     style={{
-                      background: "var(--color-qm-danger-soft)",
-                      color: "var(--color-qm-danger)",
+                      background: "var(--color-qm-surface-alt)",
+                      color: "var(--color-qm-text-muted)",
                     }}
                   >
-                    Expired
+                    Free
                   </span>
                 )}
               </div>
