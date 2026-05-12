@@ -347,7 +347,7 @@ export function OnboardingFlow({
 
   if (step === 0) {
     return (
-      <div className="min-h-dvh flex flex-col bg-qm-bg px-6 pt-[64px] pb-10">
+      <div className="min-h-dvh flex flex-col bg-qm-bg px-6 pt-[64px] pb-10 max-w-md mx-auto">
         <div className="flex-1 flex flex-col items-center justify-center text-center">
           {/* Logo */}
           <div
@@ -445,7 +445,7 @@ export function OnboardingFlow({
 
   if (step === 4) {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center bg-qm-bg px-6 pb-10">
+      <div className="min-h-dvh flex flex-col items-center justify-center bg-qm-bg px-6 pb-10 max-w-md mx-auto">
         <div className="w-full max-w-sm flex flex-col items-center text-center gap-0">
           {/* Check icon */}
           <div
@@ -519,7 +519,7 @@ export function OnboardingFlow({
   // ── Steps 1–3 share a scrollable shell ──────────────────────────────────────
 
   return (
-    <div className="min-h-dvh flex flex-col bg-qm-bg">
+    <div className="min-h-dvh flex flex-col bg-qm-bg max-w-md mx-auto">
       <ProgressHeader step={step as 1 | 2 | 3} onSkip={handleSkip} saving={saving} />
 
       {/* Scrollable content */}
