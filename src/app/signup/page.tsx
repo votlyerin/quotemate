@@ -121,15 +121,23 @@ export default function SignupPage() {
             </p>
           </div>
 
-          <p className="text-sm text-qm-text-muted mt-6">
-            Wrong email?{" "}
-            <button
-              onClick={() => setNeedsConfirmation(false)}
-              className="text-qm-accent font-semibold"
-            >
-              Go back
-            </button>
-          </p>
+          <div className="mt-6 flex flex-col gap-2 text-center">
+            <p className="text-sm text-qm-text-muted">
+              Wrong email?{" "}
+              <button
+                onClick={() => setNeedsConfirmation(false)}
+                className="text-qm-accent font-semibold"
+              >
+                Go back
+              </button>
+            </p>
+            <p className="text-sm text-qm-text-muted">
+              Already have an account?{" "}
+              <a href="/login" className="text-qm-accent font-semibold">
+                Sign in
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     );
