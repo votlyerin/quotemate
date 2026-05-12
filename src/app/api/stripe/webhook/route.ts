@@ -56,6 +56,9 @@ export async function POST(request: Request) {
         const customerId = sub.customer as string;
 
         const stripeStatus = sub.status; // active | past_due | canceled | unpaid | ...
+        // NOTE: "trialing" is intentionally not mapped here — checkout.session.completed
+        // sets the initial status. Add `stripeStatus === "trialing" ? "trialing" :` here
+        // if Stripe sends subscription.updated events during an active trial period.
         const dbStatus =
           stripeStatus === "active"
             ? "active"

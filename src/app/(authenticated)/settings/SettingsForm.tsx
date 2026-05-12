@@ -257,14 +257,10 @@ export function SettingsForm({
     setBillingLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/activate-trial", { method: "POST" });
+      const res = await fetch("/api/stripe/checkout", { method: "POST" });
       const data = await res.json();
-      if (data.ok) {
-        // Refresh server data so subscription status updates immediately
-        router.refresh();
-      } else {
-        setError(data.error || "Couldn't start trial — please try again.");
-      }
+      if (data.url) window.location.href = data.url;
+      else setError(data.error || "Couldn't open checkout.");
     } catch {
       setError("Network error — please try again.");
     } finally {
