@@ -7,6 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description:
       "Quote any job in 60 seconds. Know your profit before you say a price.",
     start_url: "/dashboard",
+    scope: "/",
     display: "standalone",
     background_color: "#0E1414",
     theme_color: "#10b981",
