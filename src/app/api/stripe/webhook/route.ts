@@ -38,12 +38,24 @@ export async function POST(request: Request) {
 
         if (!userId) break;
 
+        // Fetch the subscription to determine whether it started in trial.
+        // We need the actual status rather than assuming "active" — Stripe creates
+        // trial subscriptions with status "trialing", not "active".
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        const isTrialing = subscription.status === "trialing";
+
         await supabase
           .from("profiles")
           .update({
             stripe_customer_id: customerId,
             subscription_id: subscriptionId,
-            subscription_status: "active",
+            subscription_status: isTrialing ? "trialing" : "active",
+            // Persist trial end date so the in-app countdown banner works correctly
+            ...(isTrialing && subscription.trial_end && {
+              trial_ends_at: new Date(
+                subscription.trial_end * 1000
+              ).toISOString(),
+            }),
             // Mark trial as used the moment checkout completes — never resets,
             // even if the user later cancels or churns.
             has_used_trial: true,
@@ -58,24 +70,33 @@ export async function POST(request: Request) {
         const sub = event.data.object as Stripe.Subscription;
         const customerId = sub.customer as string;
 
-        const stripeStatus = sub.status; // active | past_due | canceled | unpaid | ...
-        // NOTE: "trialing" is intentionally not mapped here — checkout.session.completed
-        // sets the initial status. Add `stripeStatus === "trialing" ? "trialing" :` here
-        // if Stripe sends subscription.updated events during an active trial period.
+        const stripeStatus = sub.status;
+        // Map all Stripe statuses to our internal values.
+        // "trialing" must be handled here — Stripe fires subscription.updated
+        // with status "trialing" shortly after a trial checkout completes, and
+        // again whenever trial metadata changes. Falling through to "expired"
+        // would immediately revoke Pro access for users in an active trial.
         const dbStatus =
           stripeStatus === "active"
             ? "active"
-            : stripeStatus === "past_due"
-              ? "past_due"
-              : stripeStatus === "canceled"
-                ? "canceled"
-                : "expired";
+            : stripeStatus === "trialing"
+              ? "trialing"
+              : stripeStatus === "past_due"
+                ? "past_due"
+                : stripeStatus === "canceled"
+                  ? "canceled"
+                  : "expired";
 
         await supabase
           .from("profiles")
           .update({
             subscription_status: dbStatus,
             subscription_id: sub.id,
+            // Keep trial_ends_at in sync with Stripe so the countdown banner
+            // displays accurate days-remaining throughout the trial period.
+            ...(stripeStatus === "trialing" && sub.trial_end && {
+              trial_ends_at: new Date(sub.trial_end * 1000).toISOString(),
+            }),
             updated_at: new Date().toISOString(),
           })
           .eq("stripe_customer_id", customerId);
