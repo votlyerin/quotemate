@@ -679,7 +679,7 @@ export function SettingsForm({
                 ? "Opening checkout…"
                 : hasUsedTrial
                 ? "Upgrade to Pro — $19/month"
-                : "Start free trial — no charge for 14 days"}
+                : "Try Pro free for 14 days — no charge until day 15"}
                 </button>
               )}
 
