@@ -73,6 +73,26 @@ function QuoteMockup() {
         className="px-5 pt-5 pb-4"
         style={{ borderBottom: "1px solid var(--color-qm-border)" }}
       >
+        {/* Example quote label + job description */}
+        <div className="flex items-center justify-between mb-3">
+          <span
+            className="text-[10.5px] font-semibold px-2.5 py-1 rounded-full"
+            style={{
+              background: "var(--color-qm-surface-alt)",
+              color: "var(--color-qm-text-faint)",
+              border: "1px solid var(--color-qm-border)",
+            }}
+          >
+            Example quote
+          </span>
+        </div>
+        <p
+          className="text-[12px] font-medium mb-3"
+          style={{ color: "var(--color-qm-text-muted)" }}
+        >
+          2-bedroom cleanout · Full load
+        </p>
+
         {/* Job tags */}
         <div className="flex gap-2 flex-wrap mb-4">
           {["Full load", "2-person crew", "2.5 hrs"].map((tag) => (
@@ -274,9 +294,9 @@ function Hero() {
             className="text-[36px] md:text-[46px] font-bold leading-[1.1] tracking-tight mb-5"
             style={{ color: "#F4F6F4" }}
           >
-            Know your price{" "}
+            Quote any job in 60 seconds.{" "}
             <span style={{ color: "var(--color-qm-accent)" }}>
-              before you say a number.
+              Know your profit before you say a price.
             </span>
           </h1>
 
@@ -291,22 +311,22 @@ function Hero() {
 
           <div className="flex flex-col sm:flex-row gap-3">
             <Link
-              href="/signup?plan=pro"
+              href="/signup?plan=free"
               className="h-14 px-7 rounded-[16px] text-[16px] font-semibold text-white flex items-center justify-center"
               style={{ background: "var(--color-qm-accent)" }}
             >
-              Start free trial — no card needed
+              Get started free
             </Link>
-            <a
-              href="#how-it-works"
+            <Link
+              href="/signup?plan=pro"
               className="h-14 px-7 rounded-[16px] text-[16px] font-semibold flex items-center justify-center"
               style={{
                 color: "rgba(244,246,244,0.75)",
                 border: "1px solid rgba(255,255,255,0.12)",
               }}
             >
-              See how it works
-            </a>
+              Start free trial
+            </Link>
           </div>
         </div>
 
@@ -791,8 +811,7 @@ function FinalCTA() {
           className="text-[15px] md:text-[16px] leading-relaxed mb-8 max-w-md mx-auto"
           style={{ color: "var(--color-qm-text-muted)" }}
         >
-          Join junk removal businesses using QuoteMate to price every job
-          with confidence — and stop leaving money on the table.
+          Start pricing every job with confidence — and stop leaving money on the table.
         </p>
         <Link
           href="/signup?plan=free"
