@@ -294,9 +294,9 @@ function Hero() {
             className="text-[36px] md:text-[46px] font-bold leading-[1.1] tracking-tight mb-5"
             style={{ color: "#F4F6F4" }}
           >
-            Quote any job in 60 seconds.{" "}
+            Quote faster. Price smarter.{" "}
             <span style={{ color: "var(--color-qm-accent)" }}>
-              Know your profit before you say a price.
+              Know your profit.
             </span>
           </h1>
 
@@ -312,20 +312,22 @@ function Hero() {
           <div className="flex flex-col sm:flex-row gap-3">
             <Link
               href="/signup?plan=free"
-              className="h-14 px-7 rounded-[16px] text-[16px] font-semibold text-white flex items-center justify-center"
+              className="px-7 py-3 rounded-[16px] font-semibold text-white flex flex-col items-center justify-center"
               style={{ background: "var(--color-qm-accent)" }}
             >
-              Get started free
+              <span className="text-[16px]">Get started free</span>
+              <span className="text-[11px] font-normal mt-0.5" style={{ color: "rgba(255,255,255,0.72)" }}>No credit card required</span>
             </Link>
             <Link
               href="/signup?plan=pro"
-              className="h-14 px-7 rounded-[16px] text-[16px] font-semibold flex items-center justify-center"
+              className="px-7 py-3 rounded-[16px] font-semibold flex flex-col items-center justify-center"
               style={{
-                color: "rgba(244,246,244,0.75)",
-                border: "1px solid rgba(255,255,255,0.12)",
+                color: "rgba(244,246,244,0.85)",
+                border: "1px solid rgba(255,255,255,0.15)",
               }}
             >
-              Start free trial
+              <span className="text-[16px]">Try Pro free for 14 days</span>
+              <span className="text-[11px] font-normal mt-0.5" style={{ color: "rgba(244,246,244,0.45)" }}>Then $19/month</span>
             </Link>
           </div>
         </div>
