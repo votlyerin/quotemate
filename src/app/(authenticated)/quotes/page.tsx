@@ -14,6 +14,7 @@ export default async function QuotesPage() {
   let quotes: Quote[] = [];
   let total = 0;
   let tier: "free" | "pro" = "free";
+  let hasUsedTrial = false;
 
   if (isSupabaseConfigured()) {
     try {
@@ -32,6 +33,7 @@ export default async function QuotesPage() {
           .single();
 
         tier = getTier(profile as Partial<Profile> | null);
+        hasUsedTrial = (profile as Partial<Profile> | null)?.has_used_trial ?? false;
 
         const { data, count } = await supabase
           .from("quotes")
@@ -48,8 +50,6 @@ export default async function QuotesPage() {
       // show empty list
     }
   }
-
-  const hasUsedTrial = (profile as { has_used_trial?: boolean } | null)?.has_used_trial ?? false;
 
   return (
     <QuotesList
