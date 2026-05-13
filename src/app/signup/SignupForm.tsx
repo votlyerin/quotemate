@@ -49,7 +49,7 @@ function PlanBadge({ plan }: { plan: "free" | "pro" }) {
           color: "var(--color-qm-accent-dark)",
         }}
       >
-        ✓ Pro plan — 14-day free trial, then $19/month · No card needed
+        ✓ Pro plan — 14-day free trial, then $19/month · Card required, not charged for 14 days
       </div>
     );
   }
@@ -74,21 +74,14 @@ async function applyPlan(
   userId: string,
   plan: "free" | "pro"
 ) {
-  if (plan === "pro") {
-    const trialEnd = new Date(
-      Date.now() + 14 * 24 * 60 * 60 * 1000
-    ).toISOString();
-    await supabase
-      .from("profiles")
-      .update({ subscription_status: "trialing", trial_ends_at: trialEnd })
-      .eq("id", userId);
-  } else {
-    // Also clear trial_ends_at so the trial banner never appears for free accounts
-    await supabase
-      .from("profiles")
-      .update({ subscription_status: "expired", trial_ends_at: null })
-      .eq("id", userId);
-  }
+  // Pro status is now always set by the Stripe webhook after checkout completes.
+  // Both free and pro start as "expired" (free default) until Stripe confirms payment.
+  // For free: clear trial_ends_at so the trial banner never appears.
+  void plan;
+  await supabase
+    .from("profiles")
+    .update({ subscription_status: "expired", trial_ends_at: null })
+    .eq("id", userId);
 }
 
 // ── Screen types ──────────────────────────────────────────────────────────────
@@ -160,10 +153,26 @@ export function SignupForm({
       // Email confirmation required — plan will be applied in /auth/callback
       setScreen("confirm");
     } else {
-      // Auto-confirmed — apply plan now, then go to onboarding
+      // Auto-confirmed — set profile to expired, then route based on plan
       await applyPlan(supabase, data.session.user.id, selectedPlan);
-      router.push("/onboarding");
-      router.refresh();
+
+      if (selectedPlan === "pro") {
+        // Pro: redirect to Stripe checkout so a card is collected before trial starts
+        const res = await fetch("/api/stripe/checkout", { method: "POST" });
+        if (res.ok) {
+          const { url } = await res.json();
+          if (url) {
+            window.location.href = url;
+            return;
+          }
+        }
+        // Fallback if checkout creation fails
+        router.push("/onboarding");
+        router.refresh();
+      } else {
+        router.push("/onboarding");
+        router.refresh();
+      }
     }
   }
 
@@ -378,8 +387,9 @@ export function SignupForm({
           <p className="text-sm text-qm-text-muted mt-3 leading-relaxed">
             We sent a confirmation link to{" "}
             <span className="font-semibold text-qm-text">{email}</span>. Click
-            it to activate your account and start your{" "}
-            {selectedPlan === "pro" ? "14-day free trial" : "free account"}.
+            {selectedPlan === "pro"
+              ? "it to activate your account — you'll then be taken to checkout to start your 14-day free trial. Your card won't be charged until day 15."
+              : "it to activate your free account."}
           </p>
 
           <div
@@ -461,7 +471,7 @@ export function SignupForm({
           </p>
 
           <a
-            href="/login"
+            href={selectedPlan === "pro" ? "/login?next=stripe-pro" : "/login"}
             className="mt-6 w-full h-14 rounded-[16px] bg-qm-accent text-white text-[17px] font-semibold flex items-center justify-center"
           >
             Sign in to your account
@@ -610,7 +620,7 @@ export function SignupForm({
         </h1>
         <p className="text-sm text-qm-text-muted text-center mt-2 mb-6">
           {selectedPlan === "pro"
-            ? "Start your 14-day free trial — no card needed"
+            ? "Create your account, then set up your card to start the trial"
             : "Start building quotes in 60 seconds"}
         </p>
 

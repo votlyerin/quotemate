@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextParam = searchParams.get("next");
   const supabase = createClient();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -26,6 +28,21 @@ export default function LoginPage() {
     if (error) {
       setError(error.message);
       setLoading(false);
+    } else if (nextParam === "stripe-pro") {
+      // Existing user who came from the "Try Pro free" landing page CTA.
+      // Route them directly to Stripe checkout — the endpoint checks has_used_trial
+      // to determine whether they get the 14-day trial or pay immediately.
+      const res = await fetch("/api/stripe/checkout", { method: "POST" });
+      if (res.ok) {
+        const { url } = await res.json();
+        if (url) {
+          window.location.href = url;
+          return;
+        }
+      }
+      // Fallback if checkout creation fails
+      router.push("/dashboard");
+      router.refresh();
     } else {
       router.push("/dashboard");
       router.refresh();
@@ -129,5 +146,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
