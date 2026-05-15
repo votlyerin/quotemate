@@ -30,7 +30,32 @@ function LoginForm() {
       setLoading(false);
     } else if (nextParam === "stripe-pro") {
       // Existing user who came from the "Try Pro free" landing page CTA.
-      // Route them directly to Stripe checkout — the endpoint checks has_used_trial
+      // First check if they already have an active subscription — if so, just
+      // send them to the dashboard rather than opening a redundant checkout.
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = user
+        ? await supabase
+            .from("profiles")
+            .select("subscription_status")
+            .eq("id", user.id)
+            .single()
+        : { data: null };
+
+      const status = profile?.subscription_status;
+      const alreadyPro =
+        status === "active" ||
+        status === "trialing" ||
+        status === "trial_ending" ||
+        status === "past_due";
+
+      if (alreadyPro) {
+        // Already subscribed — skip Stripe, go straight to dashboard
+        router.push("/dashboard");
+        router.refresh();
+        return;
+      }
+
+      // Not yet subscribed — open checkout. The endpoint checks has_used_trial
       // to determine whether they get the 14-day trial or pay immediately.
       const res = await fetch("/api/stripe/checkout", { method: "POST" });
       if (res.ok) {
