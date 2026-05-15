@@ -13,8 +13,8 @@ test("normal login lands on dashboard", async ({ page }) => {
   const password = process.env.E2E_PASSWORD!;
 
   await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
+  await page.getByPlaceholder("you@example.com").fill(email);
+  await page.getByPlaceholder("••••••••").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
 
   await page.waitForURL(/\/(dashboard|onboarding)/);
@@ -25,16 +25,12 @@ test("normal login lands on dashboard", async ({ page }) => {
 
 test("wrong password shows error, stays on login", async ({ page }) => {
   await page.goto("/login");
-  await page.getByLabel("Email").fill("nobody@example.com");
-  await page.getByLabel("Password").fill("definitely-wrong");
+  await page.getByPlaceholder("you@example.com").fill("nobody@example.com");
+  await page.getByPlaceholder("••••••••").fill("definitely-wrong");
   await page.getByRole("button", { name: "Sign in" }).click();
 
-  // Should remain on /login
   await expect(page).toHaveURL(/\/login/);
-  // Error message should be visible
-  await expect(page.locator("text=Invalid login credentials").or(
-    page.locator("[class*=danger]")
-  )).toBeVisible();
+  await expect(page.locator("[class*=danger], [style*=danger]").first()).toBeVisible();
 });
 
 // ─── Case 6–8: ?next=stripe-pro with existing Pro subscriber ─────────────────
@@ -45,7 +41,7 @@ test("login with ?next=stripe-pro as existing Pro user goes to dashboard", async
   const email = process.env.E2E_PRO_EMAIL ?? process.env.E2E_EMAIL!;
   const password = process.env.E2E_PRO_PASSWORD ?? process.env.E2E_PASSWORD!;
 
-  // Intercept the Stripe checkout API so we can assert it is NOT called
+  // Intercept the Stripe checkout API — assert it is NOT called
   let checkoutCalled = false;
   await page.route("**/api/stripe/checkout", async (route) => {
     checkoutCalled = true;
@@ -53,8 +49,8 @@ test("login with ?next=stripe-pro as existing Pro user goes to dashboard", async
   });
 
   await page.goto("/login?next=stripe-pro");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
+  await page.getByPlaceholder("you@example.com").fill(email);
+  await page.getByPlaceholder("••••••••").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
 
   await page.waitForURL(/\/(dashboard|onboarding)/);
@@ -77,16 +73,14 @@ test("login with ?next=stripe-pro as free user calls Stripe checkout", async ({
   let checkoutCalled = false;
   await page.route("**/api/stripe/checkout", async (route) => {
     checkoutCalled = true;
-    // Return a fake URL so the browser doesn't actually navigate to Stripe
     await route.fulfill({ json: { url: "/dashboard?checkout=mocked" } });
   });
 
   await page.goto("/login?next=stripe-pro");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
+  await page.getByPlaceholder("you@example.com").fill(email);
+  await page.getByPlaceholder("••••••••").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
 
-  // Wait for navigation away from /login
   await page.waitForURL((url) => !url.pathname.startsWith("/login"), {
     timeout: 10_000,
   });
