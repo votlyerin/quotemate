@@ -9,45 +9,12 @@ import {
   CheckCircle,
   Check,
 } from "lucide-react";
+import { AppLogo } from "@/components/AppLogo";
 
 // ── Shared logo ───────────────────────────────────────────────────────────────
 
 function Logo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
-  const box =
-    size === "lg"
-      ? "w-14 h-14 rounded-[14px]"
-      : size === "sm"
-      ? "w-9 h-9 rounded-[10px]"
-      : "w-10 h-10 rounded-[11px]";
-  const svgW = size === "lg" ? 28 : size === "sm" ? 18 : 22;
-
-  return (
-    <div
-      className={`${box} flex items-center justify-center shrink-0`}
-      style={{ background: "var(--color-qm-accent)" }}
-    >
-      <svg width={svgW} height={svgW} viewBox="0 0 40 40" fill="none">
-        <path
-          d="M13 14h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H17l-4 3v-3h-1a2 2 0 0 1-2-2v-8c0-1.1.9-2 2-2z"
-          fill="white"
-          opacity="0.2"
-        />
-        <path
-          d="M19.5 16.5c-2.2 0-3.7 1.2-3.7 3 0 3.4 5.4 2 5.4 3.7 0 .6-.7 1-1.7 1s-1.8-.4-2.2-1.2"
-          stroke="#fff"
-          strokeWidth="1.8"
-          fill="none"
-          strokeLinecap="round"
-        />
-        <path
-          d="M19.5 15v1.5M19.5 23.2v1.5"
-          stroke="#fff"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-        />
-      </svg>
-    </div>
-  );
+  return <AppLogo size={size} />;
 }
 
 // ── Mock quote result card (pure HTML/CSS — no images) ────────────────────────

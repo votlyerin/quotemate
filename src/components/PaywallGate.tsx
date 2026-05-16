@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, Zap } from "lucide-react";
+import { AppLogo } from "@/components/AppLogo";
 
 const FEATURES = [
   "Create unlimited professional quotes",
@@ -61,36 +62,7 @@ export function PaywallGate({
     <div className="min-h-dvh bg-qm-bg flex flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm flex flex-col items-center gap-6">
         {/* Logo */}
-        <div
-          className="w-[72px] h-[72px] rounded-[22px] flex items-center justify-center shadow-lg"
-          style={{ background: "var(--color-qm-accent)" }}
-        >
-          <svg
-            width="40"
-            height="40"
-            viewBox="0 0 40 40"
-            fill="none"
-          >
-            <path
-              d="M13 14h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H17l-4 3v-3h-1a2 2 0 0 1-2-2v-8c0-1.1.9-2 2-2z"
-              fill="white"
-              opacity="0.2"
-            />
-            <path
-              d="M19.5 16.5c-2.2 0-3.7 1.2-3.7 3 0 3.4 5.4 2 5.4 3.7 0 .6-.7 1-1.7 1s-1.8-.4-2.2-1.2"
-              stroke="white"
-              strokeWidth="1.8"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M19.5 15v1.5M19.5 23.2v1.5"
-              stroke="white"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
+        <AppLogo size="xl" />
 
         {/* Headline */}
         <div className="text-center">

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { AppLogo } from "@/components/AppLogo";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -37,28 +38,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <div className="w-14 h-14 rounded-[14px] bg-qm-accent flex items-center justify-center">
-            <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-              <path
-                d="M13 14h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H17l-4 3v-3h-1a2 2 0 0 1-2-2v-8c0-1.1.9-2 2-2z"
-                fill="white"
-                opacity="0.2"
-              />
-              <path
-                d="M19.5 16.5c-2.2 0-3.7 1.2-3.7 3 0 3.4 5.4 2 5.4 3.7 0 .6-.7 1-1.7 1s-1.8-.4-2.2-1.2"
-                stroke="#fff"
-                strokeWidth="1.8"
-                fill="none"
-                strokeLinecap="round"
-              />
-              <path
-                d="M19.5 15v1.5M19.5 23.2v1.5"
-                stroke="#fff"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-            </svg>
-          </div>
+          <AppLogo size="lg" />
         </div>
 
         {sent ? (
