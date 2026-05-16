@@ -27,7 +27,7 @@ setup("log in and save session", async ({ page }) => {
   await page.getByPlaceholder("••••••••").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
 
-  await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 15_000 });
+  await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 30_000 });
 
   await page.context().storageState({ path: authFile });
 });

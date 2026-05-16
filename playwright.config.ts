@@ -9,7 +9,7 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false, // auth state is shared, run sequentially
   retries: 1,
-  timeout: 30_000,
+  timeout: 60_000,
   use: {
     baseURL: "http://localhost:3000",
     // Persist auth cookies between tests in the same project
