@@ -8,6 +8,7 @@ config({ path: path.resolve(__dirname, ".env.local") });
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false, // auth state is shared, run sequentially
+  workers: 1,          // one worker prevents concurrent Supabase auth collisions
   retries: 1,
   timeout: 60_000,
   use: {
