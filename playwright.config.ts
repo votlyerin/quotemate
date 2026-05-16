@@ -23,10 +23,10 @@ export default defineConfig({
       testMatch: /.*\.setup\.ts/,
       use: { storageState: undefined },
     },
-    // Main tests that reuse the saved session
+    // Main tests that reuse the saved session (excludes unauth/ subdirectory)
     {
       name: "authenticated",
-      testMatch: /e2e\/.*\.spec\.ts/,
+      testMatch: /e2e\/(?!unauth\/).*\.spec\.ts/,
       dependencies: ["setup"],
     },
     // Tests that run without any session

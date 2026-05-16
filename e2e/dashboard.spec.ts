@@ -18,10 +18,10 @@ test("/ redirects authenticated user to dashboard", async ({ page }) => {
 test("dashboard shows stat cards and bottom nav", async ({ page }) => {
   await page.goto("/dashboard");
 
-  // Bottom nav tabs should be present
-  await expect(page.getByRole("link", { name: /home/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: /quotes/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: /settings/i })).toBeVisible();
+  // Bottom nav uses <button> elements (not links) with router.push
+  await expect(page.getByRole("button", { name: /home/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /quotes/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /settings/i })).toBeVisible();
 });
 
 // ─── Case: Unauthenticated access to dashboard redirects to login ─────────────
@@ -42,5 +42,6 @@ test("unauthenticated /dashboard redirects to login", async ({ browser }) => {
 
 test("settings page loads for authenticated user", async ({ page }) => {
   await page.goto("/settings");
-  await expect(page.getByText(/settings/i)).toBeVisible();
+  // Use the h1-level heading specifically — multiple elements match /settings/i
+  await expect(page.locator("text=Settings").first()).toBeVisible();
 });
