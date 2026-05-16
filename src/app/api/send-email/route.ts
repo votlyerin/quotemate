@@ -241,6 +241,10 @@ export async function POST(req: NextRequest) {
         name: `${businessName} via QuoteMate`,
         email: fromEmail,
       },
+      replyTo: {
+        email: profile?.email || user.email!,
+        name: businessName,
+      },
       to: [
         {
           email: quote.customer_email,
