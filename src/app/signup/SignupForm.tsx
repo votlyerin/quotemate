@@ -593,7 +593,9 @@ export function SignupForm({
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center px-6 bg-qm-bg">
       <div className="w-full max-w-sm">
-        <Logo />
+        <div className="flex justify-center mb-8">
+          <AppLogo size="lg" />
+        </div>
 
         <h1 className="text-2xl font-bold text-qm-text text-center tracking-tight">
           Create your account
