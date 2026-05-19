@@ -310,6 +310,8 @@ export function OnboardingFlow({
         onboarding_step: 4,
         onboarded_at: new Date().toISOString(),
       });
+      // Fire welcome email non-blocking — failure must not stall the user
+      fetch("/api/emails/welcome", { method: "POST" }).catch(() => {});
       setStep(4);
     } catch {
       setStep(4);
@@ -337,6 +339,8 @@ export function OnboardingFlow({
         onboarding_step: 4,
         onboarded_at: new Date().toISOString(),
       });
+      // Fire welcome email non-blocking — failure must not stall the user
+      fetch("/api/emails/welcome", { method: "POST" }).catch(() => {});
     } catch {
       // non-fatal
     } finally {
