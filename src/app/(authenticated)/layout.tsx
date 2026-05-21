@@ -19,35 +19,46 @@ export default async function AuthenticatedLayout({
   let daysLeft = 0;
 
   if (isSupabaseConfigured()) {
+    // ── Auth check ────────────────────────────────────────────────────────────
+    // IMPORTANT: redirect() throws a special NEXT_REDIRECT error internally.
+    // Calling it inside a try/catch causes the catch block to intercept it and
+    // redirect to /login instead of the intended destination. All redirect()
+    // calls must live OUTSIDE the try/catch so they propagate correctly.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let user: any = null;
+    let profile: { subscription_status: string | null; trial_ends_at: string | null; stripe_customer_id: string | null; onboarded_at: string | null } | null = null;
+
     try {
       const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data } = await supabase.auth.getUser();
+      user = data.user;
 
-      if (!user) {
-        redirect("/login");
-      }
-
-      // Fetch profile for subscription check
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select(
-          "subscription_status, trial_ends_at, stripe_customer_id, onboarded_at"
-        )
-        .eq("id", user.id)
-        .single();
-
-      if (profile) {
-        // Redirect un-onboarded users to the setup flow
-        if (!profile.onboarded_at) {
-          redirect("/onboarding");
-        }
-        subStatus = getEffectiveSubStatus(profile as Partial<Profile>);
-        daysLeft = trialDaysLeft(profile.trial_ends_at);
+      if (user) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select(
+            "subscription_status, trial_ends_at, stripe_customer_id, onboarded_at"
+          )
+          .eq("id", user.id)
+          .single();
+        profile = profileData;
       }
     } catch {
+      // Network / DB error — treat as unauthenticated
       redirect("/login");
+    }
+
+    // redirect() calls are outside try/catch so NEXT_REDIRECT propagates cleanly
+    if (!user) {
+      redirect("/login");
+    }
+
+    if (profile) {
+      if (!profile.onboarded_at) {
+        redirect("/onboarding");
+      }
+      subStatus = getEffectiveSubStatus(profile as Partial<Profile>);
+      daysLeft = trialDaysLeft(profile.trial_ends_at ?? null);
     }
   }
 
