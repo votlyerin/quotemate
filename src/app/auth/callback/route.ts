@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { stripe } from "@/lib/stripe";
 import { NextResponse } from "next/server";
 
@@ -7,29 +8,77 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const type = searchParams.get("type"); // "signup" | "recovery" | "magiclink" | etc.
   const next = searchParams.get("next") ?? "/onboarding";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin.replace(/\/$/, "");
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/login?error=auth`);
+    return NextResponse.redirect(`${appUrl}/login?error=auth`);
   }
 
-  const supabase = await createClient();
+  // Track every cookie Supabase wants to set so we can stamp them explicitly
+  // onto whichever NextResponse.redirect() we return.
+  //
+  // Why: NextResponse.redirect() creates a fresh Response object. Cookies
+  // queued via cookies() from next/headers (the setAll path below) are NOT
+  // guaranteed to appear on a redirect response in all Next.js versions.
+  // By capturing them here and calling res.cookies.set() manually we ensure
+  // the session is written to the browser on every possible exit path —
+  // including the redirect to Stripe checkout.
+  const cookieStore = await cookies();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sessionCookies: Array<{ name: string; value: string; options: any }> = [];
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          // Capture for the redirect response…
+          cookiesToSet.forEach((c) => sessionCookies.push(c));
+          // …and also persist via next/headers so any subsequent
+          // supabase calls in this same handler see the session.
+          cookiesToSet.forEach(({ name, value, options }) => {
+            try {
+              cookieStore.set(name, value, options);
+            } catch {
+              // Silently ignore — can throw in Server Component context
+            }
+          });
+        },
+      },
+    }
+  );
+
   const { error, data } = await supabase.auth.exchangeCodeForSession(code);
 
+  /** Redirect and stamp all session cookies onto the response. */
+  function authRedirect(url: string) {
+    const res = NextResponse.redirect(url);
+    sessionCookies.forEach(({ name, value, options }) =>
+      res.cookies.set(name, value, options)
+    );
+    return res;
+  }
+
   if (error || !data.session) {
-    return NextResponse.redirect(`${origin}/login?error=auth`);
+    return NextResponse.redirect(`${appUrl}/login?error=auth`);
   }
 
-  // ── Password reset — never touch the subscription, go straight to the form ──
-  // Supabase sets type=recovery for all password-reset links. We must handle
-  // this before any plan/Stripe logic so a Pro user clicking a reset link
-  // doesn't get sent to Stripe checkout (and doesn't have their status clobbered).
+  // ── Password reset — never run plan/Stripe logic ─────────────────────────
+  // Supabase sets type=recovery for all password-reset links.
   if (type === "recovery") {
-    return NextResponse.redirect(`${origin}/reset-password`);
+    return authRedirect(`${appUrl}/reset-password`);
   }
 
-  // ── Signup / email-confirmation — apply plan and route ───────────────────────
+  // ── Signup / email confirmation — apply plan and route ───────────────────
   const userId = data.session.user.id;
-  const plan = data.session.user.user_metadata?.plan as "free" | "pro" | undefined;
+  const plan = data.session.user.user_metadata?.plan as
+    | "free"
+    | "pro"
+    | undefined;
 
   if (plan) {
     const { data: profile } = await supabase
@@ -42,11 +91,9 @@ export async function GET(request: Request) {
 
     const currentStatus = profile?.subscription_status;
 
-    // "Stripe managed" = any non-free subscription state. These users must
-    // never be sent to checkout again, regardless of their original signup plan.
-    // Critically, trialing and trial_ending must be included — the old code only
-    // checked active|past_due, which caused trialing users to be sent to Stripe
-    // on every subsequent auth link (password reset, etc.).
+    // Already has an active subscription — skip all plan logic.
+    // Includes trialing so a user in their 14-day trial can never be
+    // redirected to checkout again by a stray auth link.
     const isStripeManaged =
       currentStatus === "active" ||
       currentStatus === "trialing" ||
@@ -54,24 +101,18 @@ export async function GET(request: Request) {
       currentStatus === "past_due";
 
     if (isStripeManaged) {
-      // Already subscribed — skip all plan logic and send to dashboard
-      return NextResponse.redirect(`${origin}/dashboard`);
+      return authRedirect(`${appUrl}/dashboard`);
     }
 
     if (plan === "pro") {
-      // New Pro signup that hasn't completed checkout yet.
-      // Set status to expired so quota limits apply until Stripe confirms payment.
-      // The webhook upgrades this to "trialing" once checkout completes.
+      // New Pro signup — require a card via Stripe checkout.
+      // Status stays expired until the Stripe webhook confirms payment.
       await supabase
         .from("profiles")
         .update({ subscription_status: "expired", trial_ends_at: null })
         .eq("id", userId);
 
       try {
-        const appUrl =
-          process.env.NEXT_PUBLIC_APP_URL || origin.replace(/\/$/, "");
-
-        // Reuse existing Stripe customer or create one
         let customerId = profile?.stripe_customer_id ?? undefined;
         if (!customerId) {
           const customer = await stripe.customers.create({
@@ -88,7 +129,6 @@ export async function GET(request: Request) {
         }
 
         const isFirstTrial = !profile?.has_used_trial;
-
         const session = await stripe.checkout.sessions.create({
           customer: customerId,
           mode: "subscription",
@@ -103,18 +143,18 @@ export async function GET(request: Request) {
         });
 
         if (session.url) {
-          return NextResponse.redirect(session.url);
+          // authRedirect stamps the session cookies so the user is still
+          // authenticated when Stripe sends them back to /dashboard.
+          return authRedirect(session.url);
         }
       } catch (err) {
         console.error("Stripe checkout creation failed in auth/callback:", err);
-        // Fall through to onboarding as a free account rather than blocking
       }
 
-      return NextResponse.redirect(`${origin}/onboarding`);
+      // Stripe session creation failed — land on onboarding as free
+      return authRedirect(`${appUrl}/onboarding`);
     } else {
-      // Free tier — mark as expired so quota limits apply immediately.
-      // Clear trial_ends_at: the DB trigger may set it for all new users,
-      // which would cause the trial banner to appear for free accounts.
+      // Free tier — mark expired so quota limits apply immediately
       await supabase
         .from("profiles")
         .update({ subscription_status: "expired", trial_ends_at: null })
@@ -122,5 +162,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}${next}`);
+  return authRedirect(`${appUrl}${next}`);
 }
