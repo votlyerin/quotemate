@@ -641,8 +641,8 @@ export function SettingsForm({
                 )}
               </div>
 
-              {/* Manage billing (existing subscriber) */}
-              {hasStripeCustomer && (
+              {/* Manage billing — only for active subscribers and past-due accounts */}
+              {hasStripeCustomer && (subStatus === "active" || subStatus === "trialing" || subStatus === "trial_ending" || subStatus === "past_due") && (
                 <button
                   onClick={handleManageBilling}
                   disabled={billingLoading}
@@ -664,7 +664,7 @@ export function SettingsForm({
               )}
 
               {/* Subscribe CTA — free tier only, hidden for active subscribers and trial users */}
-              {!isPro && !hasStripeCustomer && (
+              {!isPro && (
                 <button
                   onClick={handleSubscribe}
                   disabled={billingLoading}
