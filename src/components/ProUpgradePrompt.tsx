@@ -14,7 +14,7 @@ const PRO_FEATURES = [
   "Unlimited quotes per month",
   "Full quote history",
   "Full line-item cost breakdown",
-  "Send via email, text, or link",
+  "Send via email or link",
   "Quote status tracking",
   "Editable complexity surcharges",
 ];

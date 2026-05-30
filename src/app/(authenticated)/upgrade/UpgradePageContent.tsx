@@ -22,6 +22,9 @@ interface FeatureGroup {
   features: Feature[];
 }
 
+// Set to true when Twilio A2P registration is complete
+const SMS_ENABLED = false;
+
 const FEATURE_GROUPS: FeatureGroup[] = [
   {
     title: "Quotes",
@@ -65,7 +68,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
   {
     title: "Sending & status",
     features: [
-      { label: "Send via SMS / text", free: false, pro: true, highlight: true },
+      ...(SMS_ENABLED ? [{ label: "Send via SMS / text", free: false, pro: true, highlight: true } as Feature] : []),
       { label: "Send via email", free: false, pro: true, highlight: true },
       {
         label: "Status tracking",

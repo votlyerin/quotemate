@@ -18,6 +18,9 @@ import type { Quote, Profile } from "@/types/database";
 import { ProUpgradePrompt } from "@/components/ProUpgradePrompt";
 import { effectiveStatus } from "@/lib/quote-status";
 
+// Set to true when Twilio A2P registration is complete
+const SMS_ENABLED = false;
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const STATUS_OPTS = ["draft", "sent", "accepted", "declined", "expired"] as const;
@@ -561,7 +564,7 @@ export function QuoteDetail({
               Send to customer
             </div>
             <div className="flex flex-col gap-[8px]">
-              {quote.customer_phone && (
+              {SMS_ENABLED && quote.customer_phone && (
                 <button
                   onClick={() => isPro ? setSmsSheet(true) : setShowUpgrade(true)}
                   className="w-full h-[52px] rounded-2xl flex items-center justify-center gap-2 text-[15px] font-semibold text-white transition-opacity active:opacity-80"
@@ -627,8 +630,8 @@ export function QuoteDetail({
         />
       )}
 
-      {/* SMS sheet */}
-      {smsSheet && (
+      {/* SMS sheet — hidden until SMS_ENABLED */}
+      {SMS_ENABLED && smsSheet && (
         <Sheet
           title="Send via SMS"
           subtitle={`To: ${quote.customer_phone}`}
