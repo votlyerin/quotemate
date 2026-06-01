@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { LogOut, Check, CreditCard, Zap, Lock, ChevronRight } from "lucide-react";
+import { LogOut, Check, CreditCard, Zap, Lock, ChevronRight, Mail } from "lucide-react";
 import type { Profile, TruckloadPricing } from "@/types/database";
 import { getEffectiveSubStatus, trialDaysLeft } from "@/lib/subscription";
 import { getTier } from "@/lib/tier";
@@ -759,6 +759,24 @@ export function SettingsForm({
                   </div>
                 </div>
               )}
+
+              <a
+                href="mailto:support@goquotemate.com"
+                className="w-full flex items-center gap-3 bg-qm-surface border border-qm-border rounded-2xl px-[14px] py-[13px] active:opacity-70 transition-opacity"
+              >
+                <div
+                  className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+                  style={{ background: "var(--color-qm-surface-alt)" }}
+                >
+                  <Mail
+                    size={17}
+                    style={{ color: "var(--color-qm-text-muted)" }}
+                  />
+                </div>
+                <span className="text-[15px] font-semibold text-qm-text-muted">
+                  Contact Support
+                </span>
+              </a>
 
               <button
                 onClick={handleSignOut}

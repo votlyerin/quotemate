@@ -842,6 +842,13 @@ function Footer() {
           >
             Sign up
           </Link>
+          <a
+            href="mailto:support@goquotemate.com"
+            className="text-[13px] font-medium"
+            style={{ color: "rgba(255,255,255,0.45)" }}
+          >
+            Support
+          </a>
           <span
             className="text-[12px]"
             style={{ color: "rgba(255,255,255,0.25)" }}
