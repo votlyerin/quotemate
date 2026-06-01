@@ -1,5 +1,8 @@
 "use client";
 
+// Set to true when Twilio A2P registration is complete
+const SMS_ENABLED = false;
+
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -1806,7 +1809,7 @@ export function NewQuoteFlow({
                 proOnly: true,
                 action: () => { setShareSheet(false); setEmailSheet(true); },
               },
-              {
+              ...(SMS_ENABLED ? [{
                 id: "send-sms",
                 label: "Send via Text",
                 sub: "Fastest — most customers prefer this",
@@ -1814,7 +1817,7 @@ export function NewQuoteFlow({
                 color: "#34D399",
                 proOnly: true,
                 action: () => { setShareSheet(false); setSmsSheet(true); },
-              },
+              }] : []),
               {
                 id: "copy-link",
                 label: "Copy link",
@@ -1866,8 +1869,8 @@ export function NewQuoteFlow({
         </Sheet>
       )}
 
-      {/* SMS sheet */}
-      {smsSheet && (
+      {/* SMS sheet — hidden until SMS_ENABLED */}
+      {SMS_ENABLED && smsSheet && (
         <Sheet
           title="Text message preview"
           subtitle={`To: ${draft.customer || "Customer"}${draft.phone ? ` · ${draft.phone}` : ""}`}
