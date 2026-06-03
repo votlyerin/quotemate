@@ -2,8 +2,11 @@ import { stripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const plan = searchParams.get("plan"); // "pro_upgrade" → no trial, uses STRIPE_PRO_UPGRADE_PRICE_ID
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -23,7 +26,7 @@ export async function POST() {
     const appUrl =
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-    // Reuse existing Stripe customer or let Stripe create one
+    // Reuse existing Stripe customer or create one
     let customerId = profile?.stripe_customer_id ?? undefined;
 
     if (!customerId) {
@@ -41,7 +44,27 @@ export async function POST() {
         .eq("id", user.id);
     }
 
-    // Only offer the 14-day trial to first-time subscribers.
+    // pro_upgrade: existing free-tier user upgrading — no trial, dedicated price ID
+    if (plan === "pro_upgrade") {
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        customer_update: { email: "auto" },
+        mode: "subscription",
+        line_items: [
+          {
+            price: process.env.STRIPE_PRO_UPGRADE_PRICE_ID!,
+            quantity: 1,
+          },
+        ],
+        client_reference_id: user.id,
+        success_url: `${appUrl}/dashboard?checkout=success`,
+        cancel_url: `${appUrl}/settings`,
+        allow_promotion_codes: true,
+      });
+      return NextResponse.json({ url: session.url });
+    }
+
+    // Default: new subscriber — offer 14-day trial to first-timers only.
     // has_used_trial is set to true by the webhook the moment any trial checkout
     // completes — it never resets, so returning users pay immediately.
     const isFirstTrial = !profile?.has_used_trial;

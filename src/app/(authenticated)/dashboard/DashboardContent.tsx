@@ -118,6 +118,20 @@ export function DashboardContent({
   checkoutSuccess = false,
 }: DashboardContentProps) {
   const [successDismissed, setSuccessDismissed] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
+
+  async function handleUpgrade() {
+    setUpgrading(true);
+    try {
+      const res = await fetch("/api/stripe/checkout?plan=pro_upgrade", { method: "POST" });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch {
+      // ignore — user can try again
+    } finally {
+      setUpgrading(false);
+    }
+  }
 
   // Auto-dismiss the checkout success banner after 6s
   useEffect(() => {
@@ -238,14 +252,15 @@ export function DashboardContent({
                   ? "Monthly quote limit reached"
                   : `${monthlyQuoteCount} of ${FREE_MONTHLY_LIMIT} free quotes used`}
               </div>
-              <Link
-                href="/settings"
-                className="flex items-center gap-[4px] text-[11px] font-bold uppercase tracking-[0.3px]"
+              <button
+                onClick={handleUpgrade}
+                disabled={upgrading}
+                className="flex items-center gap-[4px] text-[11px] font-bold uppercase tracking-[0.3px] disabled:opacity-60"
                 style={{ color: "var(--color-qm-accent)" }}
               >
                 <Zap size={11} strokeWidth={2.5} />
-                Upgrade
-              </Link>
+                {upgrading ? "Loading…" : "Upgrade"}
+              </button>
             </div>
             {/* Progress bar */}
             <div className="h-[5px] rounded-full bg-qm-border overflow-hidden">
