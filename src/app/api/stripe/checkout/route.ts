@@ -48,7 +48,6 @@ export async function POST(request: Request) {
     if (plan === "pro_upgrade") {
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
-        customer_update: { email: "auto" },
         mode: "subscription",
         line_items: [
           {
