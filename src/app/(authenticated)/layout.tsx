@@ -18,6 +18,8 @@ export default async function AuthenticatedLayout({
 }) {
   let subStatus: ReturnType<typeof getEffectiveSubStatus> = "active";
   let daysLeft = 0;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let user: any = null;
 
   if (isSupabaseConfigured()) {
     // ── Auth check ────────────────────────────────────────────────────────────
@@ -25,8 +27,6 @@ export default async function AuthenticatedLayout({
     // Calling it inside a try/catch causes the catch block to intercept it and
     // redirect to /login instead of the intended destination. All redirect()
     // calls must live OUTSIDE the try/catch so they propagate correctly.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let user: any = null;
     let profile: { subscription_status: string | null; trial_ends_at: string | null; stripe_customer_id: string | null; onboarded_at: string | null } | null = null;
 
     try {
