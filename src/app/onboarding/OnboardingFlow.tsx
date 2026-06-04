@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ArrowRight } from "lucide-react";
+import posthog from "posthog-js";
 import { AppLogo } from "@/components/AppLogo";
 import type { Profile } from "@/types/database";
 
@@ -310,6 +311,7 @@ export function OnboardingFlow({
         onboarding_step: 4,
         onboarded_at: new Date().toISOString(),
       });
+      posthog.capture("onboarding_completed");
       // Fire welcome email non-blocking — failure must not stall the user
       fetch("/api/emails/welcome", { method: "POST" }).catch(() => {});
       setStep(4);
@@ -339,6 +341,7 @@ export function OnboardingFlow({
         onboarding_step: 4,
         onboarded_at: new Date().toISOString(),
       });
+      posthog.capture("onboarding_completed");
       // Fire welcome email non-blocking — failure must not stall the user
       fetch("/api/emails/welcome", { method: "POST" }).catch(() => {});
     } catch {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import posthog from "posthog-js";
 import Link from "next/link";
 import {
   Bell,
@@ -15,6 +16,7 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import type { Profile, Quote } from "@/types/database";
 import { effectiveStatus } from "@/lib/quote-status";
+import { getEffectiveSubStatus } from "@/lib/subscription";
 
 const FREE_MONTHLY_LIMIT = 5;
 
@@ -120,7 +122,17 @@ export function DashboardContent({
   const [successDismissed, setSuccessDismissed] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
 
+  const subStatus = profile ? getEffectiveSubStatus(profile) : "expired";
+
+  // Fire trial_started once when Stripe redirects back after a trial begins
+  useEffect(() => {
+    if (checkoutSuccess && (subStatus === "trialing" || subStatus === "trial_ending")) {
+      posthog.capture("trial_started");
+    }
+  }, [checkoutSuccess, subStatus]);
+
   async function handleUpgrade() {
+    posthog.capture("upgrade_clicked", { source: "dashboard" });
     setUpgrading(true);
     try {
       const res = await fetch("/api/stripe/checkout?plan=pro_upgrade", { method: "POST" });

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { PaywallGate } from "@/components/PaywallGate";
+import { PostHogIdentify } from "@/components/PostHogIdentify";
 import { getEffectiveSubStatus, trialDaysLeft } from "@/lib/subscription";
 import type { Profile } from "@/types/database";
 
@@ -87,6 +88,13 @@ export default async function AuthenticatedLayout({
 
   return (
     <div className="min-h-dvh bg-qm-bg">
+      {user && (
+        <PostHogIdentify
+          userId={user.id}
+          email={user.email}
+          plan={subStatus}
+        />
+      )}
       {showTrialBanner && (
         <div
           className="sticky top-0 z-50 w-full"

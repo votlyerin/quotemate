@@ -4,6 +4,7 @@
 const SMS_ENABLED = false;
 
 import { useState, useMemo } from "react";
+import posthog from "posthog-js";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -597,6 +598,17 @@ export function NewQuoteFlow({
         })
         .select("id")
         .single();
+      if (data?.id) {
+        posthog.capture("quote_created", {
+          load_size: draft.loadSize,
+          final_price: finalPrice,
+          status,
+          is_pro: isPro,
+        });
+        if (status === "sent") {
+          posthog.capture("quote_sent", { method: "manual", final_price: finalPrice });
+        }
+      }
       return data?.id ?? null;
     } finally {
       setSaving(false);
@@ -638,6 +650,7 @@ export function NewQuoteFlow({
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || "Send failed");
+      posthog.capture("quote_sent", { method: "sms", final_price: finalPrice });
       setSmsSent(true);
       setTimeout(() => router.push("/quotes"), 2200);
     } catch (err) {
@@ -668,6 +681,7 @@ export function NewQuoteFlow({
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || "Send failed");
+      posthog.capture("quote_sent", { method: "email", final_price: finalPrice });
       setEmailSent(true);
       setTimeout(() => router.push("/quotes"), 2200);
     } catch (err) {

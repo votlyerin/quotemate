@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LogOut, Check, CreditCard, Zap, Lock, ChevronRight, Mail } from "lucide-react";
+import posthog from "posthog-js";
 import type { Profile, TruckloadPricing } from "@/types/database";
 import { getEffectiveSubStatus, trialDaysLeft } from "@/lib/subscription";
 import { getTier } from "@/lib/tier";
@@ -255,6 +256,7 @@ export function SettingsForm({
   }
 
   async function handleSubscribe() {
+    posthog.capture("upgrade_clicked", { source: "settings" });
     setBillingLoading(true);
     setError(null);
     try {

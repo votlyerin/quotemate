@@ -14,6 +14,7 @@ import {
   Mail,
   X,
 } from "lucide-react";
+import posthog from "posthog-js";
 import type { Quote, Profile } from "@/types/database";
 import { ProUpgradePrompt } from "@/components/ProUpgradePrompt";
 import { effectiveStatus } from "@/lib/quote-status";
@@ -323,6 +324,7 @@ export function QuoteDetail({
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || "Send failed");
+      posthog.capture("quote_sent", { method: "email", final_price: quote.final_price });
       setEmailSent(true);
       setStatus("sent");
     } catch (err) {

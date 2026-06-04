@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Zap, X, Check } from "lucide-react";
+import posthog from "posthog-js";
 
 interface ProUpgradePromptProps {
   title?: string;
@@ -32,6 +33,7 @@ export function ProUpgradePrompt({
   const [error, setError] = useState<string | null>(null);
 
   async function handleUpgrade() {
+    posthog.capture("upgrade_clicked", { source: "prompt" });
     setLoading(true);
     setError(null);
     try {
