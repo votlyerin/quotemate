@@ -38,6 +38,7 @@ export interface Profile {
   trial_ends_at: string | null;
   subscription_ends_at: string | null;
   trial_expired_email_sent_at: string | null;
+  onboarding_reminder_sent_at: string | null;
   created_at: string;
   updated_at: string;
 }
