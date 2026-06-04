@@ -627,7 +627,6 @@ export function QuoteDetail({
           body={profile?.has_used_trial
             ? "Upgrade to Pro to mark quotes as Sent, Accepted, or Declined and track your conversion rate."
             : "Upgrade to Pro to mark quotes as Sent, Accepted, or Declined and track your conversion rate. $19/month — cancel any time."}
-          hasUsedTrial={profile?.has_used_trial ?? false}
           onClose={() => setShowUpgrade(false)}
         />
       )}

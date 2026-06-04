@@ -120,7 +120,6 @@ export function DashboardContent({
   checkoutSuccess = false,
 }: DashboardContentProps) {
   const [successDismissed, setSuccessDismissed] = useState(false);
-  const [upgrading, setUpgrading] = useState(false);
 
   const subStatus = profile ? getEffectiveSubStatus(profile) : "expired";
 
@@ -131,18 +130,10 @@ export function DashboardContent({
     }
   }, [checkoutSuccess, subStatus]);
 
-  async function handleUpgrade() {
+  function handleUpgrade() {
     posthog.capture("upgrade_clicked", { source: "dashboard" });
-    setUpgrading(true);
-    try {
-      const res = await fetch("/api/stripe/checkout?plan=pro_upgrade", { method: "POST" });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-    } catch {
-      // ignore — user can try again
-    } finally {
-      setUpgrading(false);
-    }
+    window.location.href =
+      process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK!;
   }
 
   // Auto-dismiss the checkout success banner after 6s

@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { Zap, X, Check } from "lucide-react";
 import posthog from "posthog-js";
 
 interface ProUpgradePromptProps {
   title?: string;
   body?: string;
-  hasUsedTrial?: boolean;
   onClose: () => void;
 }
 
@@ -23,30 +21,13 @@ const PRO_FEATURES = [
 export function ProUpgradePrompt({
   title = "Unlock QuoteMate Pro",
   body,
-  hasUsedTrial = false,
   onClose,
 }: ProUpgradePromptProps) {
   const defaultBody = "Unlock all Pro features for $19/month — cancel any time.";
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleUpgrade() {
+  function handleUpgrade() {
     posthog.capture("upgrade_clicked", { source: "prompt" });
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/stripe/checkout?plan=pro_upgrade", { method: "POST" });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setError(data.error || "Couldn't open checkout.");
-        setLoading(false);
-      }
-    } catch {
-      setError("Network error — please try again.");
-      setLoading(false);
-    }
+    window.location.href =
+      process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK!;
   }
 
   return (
@@ -110,28 +91,14 @@ export function ProUpgradePrompt({
           ))}
         </div>
 
-        {/* Error */}
-        {error && (
-          <div
-            className="mt-3 text-[12px] text-center rounded-[10px] py-2 px-3"
-            style={{
-              background: "var(--color-qm-danger-soft)",
-              color: "var(--color-qm-danger)",
-            }}
-          >
-            {error}
-          </div>
-        )}
-
         {/* CTA */}
         <button
           onClick={handleUpgrade}
-          disabled={loading}
-          className="mt-[18px] w-full h-[52px] rounded-[16px] flex items-center justify-center gap-2 text-[16px] font-semibold text-white transition-opacity disabled:opacity-60"
+          className="mt-[18px] w-full h-[52px] rounded-[16px] flex items-center justify-center gap-2 text-[16px] font-semibold text-white"
           style={{ background: "var(--color-qm-accent)" }}
         >
           <Zap size={16} strokeWidth={2.3} />
-          {loading ? "Opening checkout…" : "Unlock Pro — $19/month"}
+          Unlock Pro — $19/month
         </button>
 
         <button

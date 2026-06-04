@@ -255,20 +255,10 @@ export function SettingsForm({
     }
   }
 
-  async function handleSubscribe() {
+  function handleSubscribe() {
     posthog.capture("upgrade_clicked", { source: "settings" });
-    setBillingLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/stripe/checkout?plan=pro_upgrade", { method: "POST" });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else setError(data.error || "Couldn't open checkout.");
-    } catch {
-      setError("Network error — please try again.");
-    } finally {
-      setBillingLoading(false);
-    }
+    window.location.href =
+      process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK!;
   }
 
   async function handleManageBilling() {
@@ -844,7 +834,6 @@ export function SettingsForm({
         <ProUpgradePrompt
           title="Customize surcharges with Pro"
           body="Upgrade to Pro to set your own fees for stairs, basement, long carry, heavy items, and rush jobs. $19/month — cancel any time."
-          hasUsedTrial={hasUsedTrial}
           onClose={() => setShowUpgrade(false)}
         />
       )}

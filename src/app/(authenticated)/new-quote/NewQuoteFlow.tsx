@@ -1598,7 +1598,6 @@ export function NewQuoteFlow({
           <ProUpgradePrompt
             title={upgradePrompt.title}
             body={upgradePrompt.body}
-            hasUsedTrial={profile?.has_used_trial ?? false}
             onClose={() => {
               setUpgradePrompt(null);
               // If quota was hit we've already saved — go to quotes
