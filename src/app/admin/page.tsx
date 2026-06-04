@@ -66,9 +66,17 @@ export default async function AdminPage() {
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
 
   // 3. Quote stats per user
-  const { data: quotes } = await supabase
+  const { data: quotes, error: quotesError } = await supabase
     .from("quotes")
     .select("user_id, status, created_at");
+
+  // Debug info — visible at the top of the admin page
+  const debug = {
+    quotesError: quotesError?.message ?? null,
+    quotesReturned: quotes?.length ?? 0,
+    sampleQuoteUserIds: quotes?.slice(0, 3).map((q) => q.user_id) ?? [],
+    sampleAuthUserIds: authUsers.slice(0, 3).map((u) => u.id),
+  };
 
   type QuoteStats = { total: number; sent: number; lastActive: string | null };
   const quoteStats = new Map<string, QuoteStats>();
@@ -119,6 +127,15 @@ export default async function AdminPage() {
             Sign out
           </button>
         </form>
+      </div>
+
+      {/* Debug panel */}
+      <div className="mx-6 mt-6 rounded-xl bg-[#1C2626] border border-white/10 p-4 font-mono text-xs text-gray-300 space-y-1">
+        <div className="text-yellow-400 font-bold mb-2">🔍 Debug (remove once fixed)</div>
+        <div>Quotes query error: <span className={debug.quotesError ? "text-red-400" : "text-emerald-400"}>{debug.quotesError ?? "none"}</span></div>
+        <div>Quotes rows returned: <span className="text-white">{debug.quotesReturned}</span></div>
+        <div>Sample quote user_ids: <span className="text-white">{debug.sampleQuoteUserIds.join(", ") || "—"}</span></div>
+        <div>Sample auth user ids:&nbsp; <span className="text-white">{debug.sampleAuthUserIds.join(", ") || "—"}</span></div>
       </div>
 
       {/* Table */}
