@@ -26,9 +26,7 @@ export function ProUpgradePrompt({
   hasUsedTrial = false,
   onClose,
 }: ProUpgradePromptProps) {
-  const defaultBody = hasUsedTrial
-    ? "Upgrade to Pro for unlimited quotes, full history, and all Pro features. $19/month — cancel any time."
-    : "Start your 14-day free trial — no charge until day 15. Cancel any time.";
+  const defaultBody = "Unlock all Pro features for $19/month — cancel any time.";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -133,11 +131,7 @@ export function ProUpgradePrompt({
           style={{ background: "var(--color-qm-accent)" }}
         >
           <Zap size={16} strokeWidth={2.3} />
-          {loading
-            ? "Opening checkout…"
-            : hasUsedTrial
-            ? "Upgrade to Pro — $19/month"
-            : "Start free trial — no charge for 14 days"}
+          {loading ? "Opening checkout…" : "Unlock Pro — $19/month"}
         </button>
 
         <button

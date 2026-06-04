@@ -624,7 +624,7 @@ export function NewQuoteFlow({
     if (hitLimit) {
       setUpgradePrompt({
         title: "You've used your 5 free quotes",
-        body: "You've reached the limit for this month. Upgrade to Pro for unlimited quotes, full cost breakdowns, email sending, and more. Start your 14-day free trial — no charge until day 15.",
+        body: "You've reached the limit for this month. Upgrade to Pro for unlimited quotes, full cost breakdowns, email sending, and more. $19/month — cancel any time.",
       });
     }
   }
@@ -634,7 +634,7 @@ export function NewQuoteFlow({
       setSmsSheet(false);
       setUpgradePrompt({
         title: "You've used your 5 free quotes",
-        body: "Upgrade to Pro for unlimited quotes and SMS sending. Start your 14-day free trial — no charge until day 15.",
+        body: "Upgrade to Pro for unlimited quotes and SMS sending. $19/month — cancel any time.",
       });
       return;
     }
@@ -665,7 +665,7 @@ export function NewQuoteFlow({
       setEmailSheet(false);
       setUpgradePrompt({
         title: "You've used your 5 free quotes",
-        body: "Upgrade to Pro for unlimited quotes and email sending. Start your 14-day free trial — no charge until day 15.",
+        body: "Upgrade to Pro for unlimited quotes and email sending. $19/month — cancel any time.",
       });
       return;
     }

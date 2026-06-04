@@ -677,11 +677,7 @@ export function SettingsForm({
                   }}
                 >
                   <Zap size={16} strokeWidth={2.3} />
-                  {billingLoading
-                ? "Opening checkout…"
-                : hasUsedTrial
-                ? "Upgrade to Pro — $19/month"
-                : "Try Pro free for 14 days — no charge until day 15"}
+                  {billingLoading ? "Opening checkout…" : "Unlock Pro — $19/month"}
                 </button>
               )}
 
@@ -847,9 +843,7 @@ export function SettingsForm({
       {showUpgrade && (
         <ProUpgradePrompt
           title="Customize surcharges with Pro"
-          body={hasUsedTrial
-            ? "Upgrade to Pro to set your own fees for stairs, basement, long carry, heavy items, and rush jobs."
-            : "Upgrade to Pro to set your own fees for stairs, basement, long carry, heavy items, and rush jobs. Start your 14-day free trial — no charge until day 15."}
+          body="Upgrade to Pro to set your own fees for stairs, basement, long carry, heavy items, and rush jobs. $19/month — cancel any time."
           hasUsedTrial={hasUsedTrial}
           onClose={() => setShowUpgrade(false)}
         />

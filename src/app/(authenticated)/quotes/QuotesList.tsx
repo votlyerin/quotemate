@@ -266,9 +266,7 @@ export function QuotesList({
       {showUpgrade && (
         <ProUpgradePrompt
           title="Unlock your full quote history"
-          body={hasUsedTrial
-            ? "Free accounts show only the 5 most recent quotes. Upgrade to Pro for unlimited history and much more."
-            : "Free accounts show only the 5 most recent quotes. Upgrade to Pro for unlimited history and much more. Start your 14-day free trial — no charge until day 15."}
+          body="Free accounts show only the 5 most recent quotes. Upgrade to Pro for unlimited history and much more. $19/month — cancel any time."
           hasUsedTrial={hasUsedTrial}
           onClose={() => setShowUpgrade(false)}
         />
