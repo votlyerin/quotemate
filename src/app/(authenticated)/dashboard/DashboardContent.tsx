@@ -257,12 +257,11 @@ export function DashboardContent({
               </div>
               <button
                 onClick={handleUpgrade}
-                disabled={upgrading}
-                className="flex items-center gap-[4px] text-[11px] font-bold uppercase tracking-[0.3px] disabled:opacity-60"
+                className="flex items-center gap-[4px] text-[11px] font-bold uppercase tracking-[0.3px]"
                 style={{ color: "var(--color-qm-accent)" }}
               >
                 <Zap size={11} strokeWidth={2.5} />
-                {upgrading ? "Loading…" : "Upgrade"}
+                Upgrade
               </button>
             </div>
             {/* Progress bar */}
