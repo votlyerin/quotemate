@@ -64,6 +64,7 @@ interface Draft {
   photoNotes: string;
   finalPrice: string;
   overrideReason: string;
+  targetMargin: string;
 }
 
 type View = "customer" | "job" | "costs" | "result" | "preview";
@@ -506,6 +507,7 @@ export function NewQuoteFlow({
     photoNotes: "",
     finalPrice: "",
     overrideReason: "",
+    targetMargin: String(pricing.margin),
   });
 
   function set<K extends keyof Draft>(k: K, v: Draft[K]) {
@@ -592,6 +594,10 @@ export function NewQuoteFlow({
           margin_status: calc.status.toLowerCase(),
           status,
           override_reason: draft.overrideReason || null,
+          margin_override: (() => {
+            const v = parseFloat(draft.targetMargin);
+            return Number.isFinite(v) && v !== pricing.margin ? v : null;
+          })(),
           expires_at: new Date(
             Date.now() + expiryDays * 86400000
           ).toISOString(),
@@ -1047,6 +1053,49 @@ export function NewQuoteFlow({
             optional
             placeholder="0"
           />
+          {/* Per-quote target margin override */}
+          <div>
+            <div className="text-[13px] font-medium text-qm-text-muted mb-[7px] flex items-center gap-[6px]">
+              Target margin
+              {draft.targetMargin !== String(pricing.margin) && (
+                <span className="text-[10.5px] font-semibold px-[6px] py-[2px] rounded-[5px] bg-amber-100 text-amber-700">
+                  overridden
+                </span>
+              )}
+            </div>
+            <div className="relative">
+              <input
+                type="number"
+                inputMode="decimal"
+                value={draft.targetMargin}
+                onChange={(e) => set("targetMargin", e.target.value)}
+                placeholder={String(pricing.margin)}
+                className="w-full bg-qm-surface border border-qm-border rounded-xl pl-3 pr-9 py-[11px] text-[14px] text-qm-text placeholder:text-qm-text-faint outline-none focus:border-qm-accent transition-colors"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[14px] text-qm-text-muted pointer-events-none">%</span>
+            </div>
+            <div className="mt-[6px] flex items-center gap-[5px] min-h-[18px]">
+              {draft.targetMargin !== String(pricing.margin) ? (
+                <>
+                  <span className="text-[11.5px] text-amber-600 font-medium">
+                    This quote only — default is {pricing.margin}%
+                  </span>
+                  <span className="text-qm-text-faint text-[11.5px]">·</span>
+                  <button
+                    onClick={() => set("targetMargin", String(pricing.margin))}
+                    className="text-[11.5px] text-qm-accent font-semibold"
+                  >
+                    Reset
+                  </button>
+                </>
+              ) : (
+                <span className="text-[11.5px] text-qm-text-faint">
+                  Your default · change globally in Settings
+                </span>
+              )}
+            </div>
+          </div>
+
           <Field
             label="Internal notes"
             value={draft.notes}

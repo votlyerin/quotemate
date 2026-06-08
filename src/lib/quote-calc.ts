@@ -18,6 +18,7 @@ export interface QuoteDraft {
   photoNotes?: string;
   finalPrice?: string;
   overrideReason?: string;
+  targetMargin?: string;
 }
 
 export interface PricingConfig {
@@ -114,7 +115,10 @@ export function calculateQuote(
   pricing: PricingConfig,
   truck: TruckPricing
 ): QuoteCalcResult {
-  const target = num(pricing.margin, 45);
+  // Per-quote margin override takes precedence over profile default
+  const target = draft.targetMargin !== undefined && draft.targetMargin !== ""
+    ? num(draft.targetMargin, num(pricing.margin, 45))
+    : num(pricing.margin, 45);
   const loadId = draft.loadSize || "half";
   const loadPrice = num((truck as unknown as Record<string, number>)[loadId], 325);
   const loadLabel = LOAD_LABELS[loadId] || loadId;

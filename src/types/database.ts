@@ -71,6 +71,7 @@ export interface Quote {
   margin_status: "excellent" | "good" | "risky" | "underpriced" | null;
   status: "draft" | "sent" | "accepted" | "declined" | "expired";
   override_reason: string | null;
+  margin_override: number | null;
   created_at: string;
   updated_at: string;
   expires_at: string | null;

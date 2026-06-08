@@ -530,6 +530,16 @@ export function QuoteDetail({
                   }
                 />
               )}
+              {quote.margin_override != null && (
+                <Row
+                  label="Target margin"
+                  value={
+                    <span className="text-qm-text-muted">
+                      {quote.margin_override}% <span className="text-qm-text-faint text-[12px]">(custom for this quote)</span>
+                    </span>
+                  }
+                />
+              )}
               {quote.override_reason && (
                 <Row
                   label="Price override reason"
