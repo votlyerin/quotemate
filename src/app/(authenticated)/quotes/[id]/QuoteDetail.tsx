@@ -601,6 +601,13 @@ export function QuoteDetail({
 
         {/* Actions */}
         <div className="mt-[18px] grid grid-cols-2 gap-[10px]">
+          {isDraft && (
+            <ActionBtn
+              onClick={() => router.push(`/quotes/${quote.id}/edit`)}
+              icon={<Pencil size={16} />}
+              label="Edit quote"
+            />
+          )}
           <ActionBtn
             onClick={() => router.push("/new-quote")}
             icon={<Pencil size={16} />}

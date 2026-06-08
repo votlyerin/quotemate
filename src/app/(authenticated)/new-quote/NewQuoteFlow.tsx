@@ -453,6 +453,8 @@ export function NewQuoteFlow({
   profile,
   tier = "free",
   monthlyQuoteCount = 0,
+  editQuoteId,
+  initialQuote,
 }: {
   pricing: PricingConfig;
   truck: TruckPricing;
@@ -460,6 +462,8 @@ export function NewQuoteFlow({
   profile: Profile | null;
   tier?: "free" | "pro";
   monthlyQuoteCount?: number;
+  editQuoteId?: string;
+  initialQuote?: import("@/types/database").Quote;
 }) {
   const router = useRouter();
   const [view, setView] = useState<View>("customer");
@@ -487,7 +491,32 @@ export function NewQuoteFlow({
   const isPro = tier === "pro";
   const isQuoteLimitHit = !isPro && monthlyQuoteCount >= 5;
 
-  const [draft, setDraft] = useState<Draft>({
+  const [draft, setDraft] = useState<Draft>(initialQuote ? {
+    // Edit mode — pre-fill from existing quote
+    customer: initialQuote.customer_name ?? "",
+    phone: initialQuote.customer_phone ?? "",
+    email: initialQuote.customer_email ?? "",
+    address: initialQuote.customer_address ?? "",
+    source: initialQuote.source ?? "",
+    loadSize: initialQuote.load_size ?? "half",
+    jobTypes: initialQuote.job_type ? initialQuote.job_type.split(", ") : [],
+    complexity: Array.isArray(initialQuote.complexity_factors) ? initialQuote.complexity_factors : [],
+    hours: initialQuote.labor_hours != null ? String(initialQuote.labor_hours) : "",
+    crew: initialQuote.crew_size != null ? String(initialQuote.crew_size) : String(pricing.crew),
+    dump: initialQuote.dump_fee != null ? String(initialQuote.dump_fee) : "",
+    travel: initialQuote.travel_fee != null ? String(initialQuote.travel_fee) : String(pricing.travel),
+    addons: initialQuote.addons ? String(initialQuote.addons) : "",
+    discount: initialQuote.discount ? String(initialQuote.discount) : "",
+    notes: initialQuote.notes ?? "",
+    photosReviewed: initialQuote.photos_reviewed ?? false,
+    photoNotes: "",
+    finalPrice: initialQuote.final_price != null ? String(initialQuote.final_price) : "",
+    overrideReason: initialQuote.override_reason ?? "",
+    targetMargin: initialQuote.margin_override != null
+      ? String(initialQuote.margin_override)
+      : String(pricing.margin),
+  } : {
+    // Create mode
     customer: "",
     phone: "",
     email: "",
@@ -554,6 +583,37 @@ export function NewQuoteFlow({
     expDate
   )}\n\nThis includes loading, hauling, and all disposal fees.\n\nReply to book!\n\n— ${ownerName}\n${businessName}`;
 
+  const quotePayload = () => ({
+    customer_name: draft.customer || null,
+    customer_phone: draft.phone || null,
+    customer_email: draft.email || null,
+    customer_address: draft.address || null,
+    source: draft.source || null,
+    load_size: draft.loadSize || null,
+    job_type: draft.jobTypes.length > 0 ? draft.jobTypes.join(", ") : null,
+    complexity_factors: draft.complexity,
+    labor_hours: parseFloat(draft.hours) || null,
+    crew_size: parseFloat(draft.crew) || null,
+    dump_fee: parseFloat(draft.dump) || 0,
+    travel_fee: parseFloat(draft.travel) || 0,
+    addons: parseFloat(draft.addons) || 0,
+    discount: parseFloat(draft.discount) || 0,
+    notes: draft.notes || null,
+    photos_reviewed: draft.photosReviewed,
+    recommended_price: calc.recommended,
+    final_price: finalPrice,
+    total_cost: calc.cost,
+    profit: calc.profit,
+    margin_pct: calc.marginPct,
+    margin_status: calc.status.toLowerCase(),
+    override_reason: draft.overrideReason || null,
+    margin_override: (() => {
+      const v = parseFloat(draft.targetMargin);
+      return Number.isFinite(v) && v !== pricing.margin ? v : null;
+    })(),
+    expires_at: new Date(Date.now() + expiryDays * 86400000).toISOString(),
+  });
+
   async function saveQuote(
     status: "draft" | "sent",
     noNav = false
@@ -566,41 +626,24 @@ export function NewQuoteFlow({
     try {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
+
+      // ── Edit mode: UPDATE existing quote ──────────────────────────────────
+      if (editQuoteId) {
+        await supabase
+          .from("quotes")
+          .update({ ...quotePayload(), status })
+          .eq("id", editQuoteId);
+        if (!noNav) router.push(`/quotes/${editQuoteId}`);
+        return editQuoteId;
+      }
+
+      // ── Create mode: INSERT new quote ─────────────────────────────────────
       const { data } = await supabase
         .from("quotes")
         .insert({
           user_id: userId,
-          customer_name: draft.customer || null,
-          customer_phone: draft.phone || null,
-          customer_email: draft.email || null,
-          customer_address: draft.address || null,
-          source: draft.source || null,
-          load_size: draft.loadSize || null,
-          job_type: draft.jobTypes.length > 0 ? draft.jobTypes.join(", ") : null,
-          complexity_factors: draft.complexity,
-          labor_hours: parseFloat(draft.hours) || null,
-          crew_size: parseFloat(draft.crew) || null,
-          dump_fee: parseFloat(draft.dump) || 0,
-          travel_fee: parseFloat(draft.travel) || 0,
-          addons: parseFloat(draft.addons) || 0,
-          discount: parseFloat(draft.discount) || 0,
-          notes: draft.notes || null,
-          photos_reviewed: draft.photosReviewed,
-          recommended_price: calc.recommended,
-          final_price: finalPrice,
-          total_cost: calc.cost,
-          profit: calc.profit,
-          margin_pct: calc.marginPct,
-          margin_status: calc.status.toLowerCase(),
+          ...quotePayload(),
           status,
-          override_reason: draft.overrideReason || null,
-          margin_override: (() => {
-            const v = parseFloat(draft.targetMargin);
-            return Number.isFinite(v) && v !== pricing.margin ? v : null;
-          })(),
-          expires_at: new Date(
-            Date.now() + expiryDays * 86400000
-          ).toISOString(),
         })
         .select("id")
         .single();
@@ -618,14 +661,16 @@ export function NewQuoteFlow({
       return data?.id ?? null;
     } finally {
       setSaving(false);
-      if (!noNav) router.push("/quotes");
+      // Edit mode handles its own navigation above; create mode navigates here
+      if (!noNav && !editQuoteId) router.push("/quotes");
     }
   }
 
   // Save with quota-limit check: saves the quote, then shows upgrade prompt
   // for free users who just used their 5th quote this month.
+  // In edit mode, skip the quota check — this isn't a new quote.
   async function doSave(status: "draft" | "sent") {
-    const hitLimit = isQuoteLimitHit || (!isPro && monthlyQuoteCount === 4);
+    const hitLimit = !editQuoteId && (isQuoteLimitHit || (!isPro && monthlyQuoteCount === 4));
     await saveQuote(status, hitLimit);
     if (hitLimit) {
       setUpgradePrompt({
