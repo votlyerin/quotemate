@@ -12,10 +12,9 @@ export function getEffectiveSubStatus(profile: {
   if (status === "active") return "active";
   if (status === "past_due") return "past_due";
 
-  // Treat null/undefined as trialing (new accounts)
   if (!status || status === "trialing") {
     const trialEnd = profile.trial_ends_at;
-    if (!trialEnd) return "trialing";
+    if (!trialEnd) return "expired";
     const now = Date.now();
     const end = new Date(trialEnd).getTime();
     if (end <= now) return "expired";
