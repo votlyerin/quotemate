@@ -278,49 +278,64 @@ function StepShell({
   );
 }
 
-function MarginGauge({
-  marginPct,
-  target,
+const SLIDER_MIN = 10;
+const SLIDER_MAX = 75;
+
+function MarginSlider({
+  targetMargin,
   status,
+  onTargetChange,
 }: {
-  marginPct: number;
-  target: number;
+  targetMargin: number;
   status: QuoteCalcResult["status"];
+  onTargetChange: (v: number) => void;
 }) {
-  const pos = Math.max(0, Math.min(100, (marginPct / 60) * 100));
-  const targetPos = Math.max(0, Math.min(100, (target / 60) * 100));
   const toneColor = {
     Excellent: "var(--color-qm-excellent)",
     Good: "var(--color-qm-good)",
     Risky: "var(--color-qm-warn)",
     Underpriced: "var(--color-qm-danger)",
   }[status];
+  const thumbPct = Math.max(0, Math.min(100, ((targetMargin - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN)) * 100));
 
   return (
     <div>
-      <div className="flex justify-between items-baseline mb-2">
+      <div className="flex justify-between items-baseline mb-3">
         <div className="text-[11px] text-qm-text-muted font-semibold uppercase tracking-[0.4px]">
-          Margin status
+          Target margin · drag to adjust
         </div>
-        <div className="text-[13px] text-qm-text-muted">Target {target}%</div>
+        <div className="text-[13px] font-bold" style={{ color: toneColor }}>
+          {targetMargin}%
+        </div>
       </div>
-      <div
-        className="relative h-[14px] rounded-lg overflow-visible"
-        style={{
-          background: `linear-gradient(90deg, var(--color-qm-danger) 0%, var(--color-qm-danger) 25%, var(--color-qm-warn) 35%, var(--color-qm-warn) 55%, var(--color-qm-good) 65%, var(--color-qm-excellent) 100%)`,
-        }}
-      >
+      <div className="relative h-[14px] rounded-lg" style={{ overflow: "visible" }}>
+        {/* Gradient track */}
         <div
-          className="absolute top-[-3px] bottom-[-3px] w-[2px] bg-qm-text rounded-[1px]"
-          style={{ left: `${targetPos}%`, transform: "translateX(-1px)" }}
-        />
-        <div
-          className="absolute top-1/2 w-[22px] h-[22px] rounded-full bg-white"
+          className="absolute inset-0 rounded-lg"
           style={{
-            left: `${pos}%`,
+            background: `linear-gradient(90deg, var(--color-qm-danger) 0%, var(--color-qm-danger) 25%, var(--color-qm-warn) 35%, var(--color-qm-warn) 55%, var(--color-qm-good) 65%, var(--color-qm-excellent) 100%)`,
+          }}
+        />
+        {/* Native range input — invisible but interactive */}
+        <input
+          type="range"
+          min={SLIDER_MIN}
+          max={SLIDER_MAX}
+          step={1}
+          value={targetMargin}
+          onChange={(e) => onTargetChange(Number(e.target.value))}
+          className="absolute inset-0 w-full h-full cursor-pointer"
+          style={{ opacity: 0, margin: 0, padding: 0, zIndex: 2 }}
+        />
+        {/* Custom thumb */}
+        <div
+          className="absolute top-1/2 w-[26px] h-[26px] rounded-full bg-white pointer-events-none"
+          style={{
+            left: `${thumbPct}%`,
             transform: "translate(-50%, -50%)",
             border: `3px solid ${toneColor}`,
-            boxShadow: "0 2px 6px rgba(0,0,0,0.18)",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.22)",
+            zIndex: 1,
           }}
         />
       </div>
@@ -1313,7 +1328,7 @@ export function NewQuoteFlow({
             </div>
           </div>
 
-          {/* Margin gauge card */}
+          {/* Margin slider card */}
           <div className="bg-qm-surface border border-qm-border rounded-[18px] p-4 mt-3">
             <div className="flex items-center justify-between mb-[14px]">
               <div>
@@ -1337,10 +1352,12 @@ export function NewQuoteFlow({
                 {calc.status}
               </div>
             </div>
-            <MarginGauge
-              marginPct={calc.marginPct}
-              target={calc.target}
+            <MarginSlider
+              targetMargin={calc.target}
               status={calc.status}
+              onTargetChange={(v) => {
+                setDraft((d) => ({ ...d, targetMargin: String(v), finalPrice: "" }));
+              }}
             />
           </div>
 
