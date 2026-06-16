@@ -1356,7 +1356,9 @@ export function NewQuoteFlow({
               targetMargin={calc.target}
               status={calc.status}
               onTargetChange={(v) => {
-                setDraft((d) => ({ ...d, targetMargin: String(v), finalPrice: "" }));
+                // Derive the exact price that achieves the chosen margin
+                const newPrice = Math.ceil(calc.cost / (1 - v / 100) / 5) * 5;
+                setDraft((d) => ({ ...d, targetMargin: String(v), finalPrice: String(newPrice) }));
               }}
             />
           </div>
