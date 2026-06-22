@@ -4,6 +4,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { PaywallGate } from "@/components/PaywallGate";
 import { PostHogIdentify } from "@/components/PostHogIdentify";
 import { getEffectiveSubStatus, trialDaysLeft } from "@/lib/subscription";
+import { BETA_MODE } from "@/lib/beta";
 import type { Profile } from "@/types/database";
 
 function isSupabaseConfigured() {
@@ -63,9 +64,9 @@ export default async function AuthenticatedLayout({
     }
   }
 
-  // Subscription gate — past_due blocks access (payment must be updated)
-  // Expired users still get access as free-tier (5 quotes/month, limited history)
-  if (subStatus === "past_due") {
+  // BETA_MODE — remove bypass when beta ends
+  // In beta, skip the past_due paywall and treat everyone as Pro.
+  if (!BETA_MODE && subStatus === "past_due") {
     return (
       <div className="min-h-dvh bg-qm-bg">
         <div className="max-w-md mx-auto">
@@ -76,15 +77,18 @@ export default async function AuthenticatedLayout({
   }
 
   // isPro controls feature access — trial_ending users still have full Pro access
+  // BETA_MODE — remove bypass when beta ends
   const isPro =
+    BETA_MODE ||
     subStatus === "active" ||
     subStatus === "trialing" ||
     subStatus === "trial_ending";
 
-  // Banner only appears when a Pro trial is specifically in its last 5 days
-  // (trial_ending). Never shows for free/expired users even if trial_ends_at
-  // happens to be set by the DB trigger.
-  const showTrialBanner = subStatus === "trialing" || subStatus === "trial_ending";
+  // Banner only appears when a Pro trial is specifically in its last 5 days.
+  // Never show in beta mode.
+  // BETA_MODE — remove bypass when beta ends
+  const showTrialBanner =
+    !BETA_MODE && (subStatus === "trialing" || subStatus === "trial_ending");
 
   return (
     <div className="min-h-dvh bg-qm-bg">

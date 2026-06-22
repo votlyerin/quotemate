@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { BrevoClient } from "@getbrevo/brevo";
+import { BETA_MODE } from "@/lib/beta";
 
 // Template IDs configured in Brevo
 const TEMPLATE_FREE_DAY3 = 2;
@@ -14,6 +15,11 @@ export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return new NextResponse("Unauthorized", { status: 401 });
+  }
+
+  // BETA_MODE — remove bypass when beta ends
+  if (BETA_MODE) {
+    return NextResponse.json({ ok: true, skipped: "beta mode — upgrade nudge emails suppressed" });
   }
 
   const brevoApiKey = process.env.BREVO_API_KEY;
