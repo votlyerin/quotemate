@@ -30,6 +30,14 @@ function LoginForm() {
       setError(error.message);
       setLoading(false);
     } else if (nextParam === "stripe-pro") {
+      // BETA_MODE — remove bypass when beta ends; restore full stripe-pro flow below
+      // During beta, everyone gets Pro access — just send them to the dashboard.
+      if (process.env.NEXT_PUBLIC_BETA_MODE === "true") {
+        router.push("/dashboard");
+        router.refresh();
+        return;
+      }
+
       // Existing user who came from the "Try Pro free" landing page CTA.
       // First check if they already have an active subscription — if so, just
       // send them to the dashboard rather than opening a redundant checkout.

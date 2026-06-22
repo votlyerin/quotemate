@@ -1,8 +1,17 @@
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { BETA_MODE } from "@/lib/beta";
 
 export async function POST(request: Request) {
+  // BETA_MODE — remove bypass when beta ends
+  if (BETA_MODE) {
+    return NextResponse.json(
+      { error: "Checkout is not available during the beta period" },
+      { status: 403 }
+    );
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const plan = searchParams.get("plan"); // "pro_upgrade" → no trial, uses STRIPE_PRO_UPGRADE_PRICE_ID

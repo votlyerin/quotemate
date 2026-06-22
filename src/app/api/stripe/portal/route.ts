@@ -1,8 +1,17 @@
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { BETA_MODE } from "@/lib/beta";
 
 export async function POST() {
+  // BETA_MODE — remove bypass when beta ends
+  if (BETA_MODE) {
+    return NextResponse.json(
+      { error: "Billing portal is not available during the beta period" },
+      { status: 403 }
+    );
+  }
+
   try {
     const supabase = await createClient();
     const {

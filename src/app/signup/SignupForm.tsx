@@ -124,7 +124,8 @@ export function SignupForm({
       // Auto-confirmed — set profile to expired, then route based on plan
       await applyPlan(supabase, data.session.user.id, selectedPlan, termsAgreedAt);
 
-      if (selectedPlan === "pro") {
+      // BETA_MODE — remove bypass when beta ends; restore Pro→checkout path below
+      if (selectedPlan === "pro" && process.env.NEXT_PUBLIC_BETA_MODE !== "true") {
         // Pro: redirect to Stripe checkout so a card is collected before trial starts
         const res = await fetch("/api/stripe/checkout", { method: "POST" });
         if (res.ok) {
@@ -134,13 +135,9 @@ export function SignupForm({
             return;
           }
         }
-        // Fallback if checkout creation fails
-        router.push("/onboarding");
-        router.refresh();
-      } else {
-        router.push("/onboarding");
-        router.refresh();
       }
+      router.push("/onboarding");
+      router.refresh();
     }
   }
 
