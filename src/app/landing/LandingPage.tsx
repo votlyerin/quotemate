@@ -241,20 +241,36 @@ function Hero() {
       <div className="max-w-5xl mx-auto px-5 py-16 md:py-24 grid md:grid-cols-2 gap-12 md:gap-8 items-center">
         {/* Left: copy */}
         <div>
-          {/* Tag */}
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-semibold mb-6"
-            style={{
-              background: "rgba(16,185,129,0.12)",
-              color: "var(--color-qm-accent)",
-              border: "1px solid rgba(16,185,129,0.2)",
-            }}
-          >
-            <span
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ background: "var(--color-qm-accent)" }}
-            />
-            Built for junk removal pros
+          {/* Tags */}
+          <div className="flex flex-col sm:flex-row gap-2 mb-6">
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-semibold"
+              style={{
+                background: "rgba(16,185,129,0.12)",
+                color: "var(--color-qm-accent)",
+                border: "1px solid rgba(16,185,129,0.2)",
+              }}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: "var(--color-qm-accent)" }}
+              />
+              Built for junk removal pros
+            </div>
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-semibold"
+              style={{
+                background: "rgba(251,191,36,0.12)",
+                color: "#FBBF24",
+                border: "1px solid rgba(251,191,36,0.25)",
+              }}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: "#FBBF24" }}
+              />
+              Now in Beta · Free access for a limited time
+            </div>
           </div>
 
           <h1
@@ -278,23 +294,12 @@ function Hero() {
 
           <div className="flex flex-col sm:flex-row gap-3">
             <Link
-              href="/signup?plan=free"
+              href="/signup"
               className="px-7 py-3 rounded-[16px] font-semibold text-white flex flex-col items-center justify-center"
               style={{ background: "var(--color-qm-accent)" }}
             >
-              <span className="text-[16px]">Get started free</span>
+              <span className="text-[16px]">Join the beta free</span>
               <span className="text-[11px] font-normal mt-0.5" style={{ color: "rgba(255,255,255,0.72)" }}>No credit card required</span>
-            </Link>
-            <Link
-              href="/signup?plan=pro"
-              className="px-7 py-3 rounded-[16px] font-semibold flex flex-col items-center justify-center"
-              style={{
-                color: "rgba(244,246,244,0.85)",
-                border: "1px solid rgba(255,255,255,0.15)",
-              }}
-            >
-              <span className="text-[16px]">Try Pro free for 14 days</span>
-              <span className="text-[11px] font-normal mt-0.5" style={{ color: "rgba(244,246,244,0.45)" }}>Then $19/month</span>
             </Link>
           </div>
         </div>
@@ -371,7 +376,7 @@ function HowItWorks() {
     {
       num: "3",
       title: "Send the quote",
-      desc: "Text or email the quote directly to the customer. One tap. They get a clean, professional quote with your business details.",
+      desc: "Share the quote with your customer via email or copy and paste it into any channel — straight from the app.",
     },
   ];
 
@@ -544,25 +549,6 @@ function Features() {
 // ── Pricing ───────────────────────────────────────────────────────────────────
 
 function PricingSection() {
-  const freeBullets = [
-    "5 quotes per month",
-    "Instant quote calculator",
-    "Profit margin tracking",
-    "Quote history (last 5)",
-    "Load size pricing",
-  ];
-
-  const proBullets = [
-    "Unlimited quotes",
-    "Full quote history",
-    "Email & SMS quote delivery",
-    "Custom pricing defaults",
-    "Surcharge builder",
-    "Truckload tier pricing",
-    "Line-item cost breakdown",
-    "14-day free trial included",
-  ];
-
   return (
     <section
       id="pricing"
@@ -581,95 +567,19 @@ function PricingSection() {
             className="text-[28px] md:text-[34px] font-bold tracking-tight"
             style={{ color: "var(--color-qm-text)" }}
           >
-            Simple, transparent pricing
+            Free during beta
           </h2>
           <p
-            className="text-[15px] mt-3"
+            className="text-[15px] mt-3 max-w-md mx-auto"
             style={{ color: "var(--color-qm-text-muted)" }}
           >
-            Priced for small service businesses.
+            QuoteMate is in beta — all features are free while we&apos;re getting started. No credit card required.
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
-          {/* Free card */}
+        <div className="max-w-md mx-auto">
           <div
-            className="rounded-[22px] p-6 flex flex-col"
-            style={{
-              background: "var(--color-qm-surface)",
-              border: "1px solid var(--color-qm-border)",
-            }}
-          >
-            <div className="mb-5">
-              <p
-                className="text-[12px] font-semibold uppercase tracking-[0.6px] mb-2"
-                style={{ color: "var(--color-qm-text-muted)" }}
-              >
-                Free
-              </p>
-              <div className="flex items-end gap-1 mb-1">
-                <span
-                  className="text-[38px] font-bold leading-none tracking-tight"
-                  style={{ color: "var(--color-qm-text)" }}
-                >
-                  $0
-                </span>
-                <span
-                  className="text-[14px] mb-2"
-                  style={{ color: "var(--color-qm-text-muted)" }}
-                >
-                  /month
-                </span>
-              </div>
-              <p
-                className="text-[13px]"
-                style={{ color: "var(--color-qm-text-muted)" }}
-              >
-                Get started with no commitment.
-              </p>
-            </div>
-
-            <ul className="space-y-2.5 flex-1 mb-6">
-              {freeBullets.map((b) => (
-                <li key={b} className="flex items-center gap-2.5">
-                  <div
-                    className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0"
-                    style={{
-                      background: "var(--color-qm-surface-alt)",
-                      border: "1px solid var(--color-qm-border)",
-                    }}
-                  >
-                    <Check
-                      size={10}
-                      strokeWidth={2.5}
-                      style={{ color: "var(--color-qm-text-muted)" }}
-                    />
-                  </div>
-                  <span
-                    className="text-[13.5px]"
-                    style={{ color: "var(--color-qm-text-muted)" }}
-                  >
-                    {b}
-                  </span>
-                </li>
-              ))}
-            </ul>
-
-            <Link
-              href="/signup?plan=free"
-              className="w-full h-12 rounded-[14px] text-[15px] font-semibold flex items-center justify-center"
-              style={{
-                border: "1.5px solid var(--color-qm-border-strong)",
-                color: "var(--color-qm-text)",
-              }}
-            >
-              Get started free
-            </Link>
-          </div>
-
-          {/* Pro card */}
-          <div
-            className="rounded-[22px] p-6 flex flex-col relative overflow-hidden"
+            className="rounded-[22px] p-8 flex flex-col items-center text-center relative overflow-hidden"
             style={{
               background: "#0E1414",
               border: "1.5px solid rgba(16,185,129,0.25)",
@@ -677,82 +587,48 @@ function PricingSection() {
           >
             {/* Subtle glow */}
             <div
-              className="absolute -top-16 -right-16 w-40 h-40 rounded-full opacity-20 pointer-events-none"
+              className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-20 pointer-events-none"
               style={{
-                background:
-                  "radial-gradient(circle, #10B981 0%, transparent 70%)",
+                background: "radial-gradient(circle, #10B981 0%, transparent 70%)",
               }}
             />
 
-            {/* Trial badge */}
             <div
-              className="absolute top-4 right-4 px-2.5 py-1 rounded-full text-[10.5px] font-bold"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-semibold mb-5"
               style={{
-                background: "rgba(16,185,129,0.15)",
-                color: "var(--color-qm-accent)",
-                border: "1px solid rgba(16,185,129,0.25)",
+                background: "rgba(251,191,36,0.12)",
+                color: "#FBBF24",
+                border: "1px solid rgba(251,191,36,0.25)",
               }}
             >
-              14-day free trial
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#FBBF24" }} />
+              Beta access
             </div>
 
-            <div className="mb-5">
-              <p
-                className="text-[12px] font-semibold uppercase tracking-[0.6px] mb-2"
-                style={{ color: "var(--color-qm-accent)" }}
+            <div className="flex items-end gap-1 mb-2">
+              <span className="text-[52px] font-bold leading-none tracking-tight text-white">
+                $0
+              </span>
+              <span
+                className="text-[15px] mb-3"
+                style={{ color: "rgba(244,246,244,0.45)" }}
               >
-                Pro
-              </p>
-              <div className="flex items-end gap-1 mb-1">
-                <span className="text-[38px] font-bold leading-none tracking-tight text-white">
-                  $19
-                </span>
-                <span
-                  className="text-[14px] mb-2"
-                  style={{ color: "rgba(244,246,244,0.45)" }}
-                >
-                  /month
-                </span>
-              </div>
-              <p
-                className="text-[13px]"
-                style={{ color: "rgba(244,246,244,0.5)" }}
-              >
-                Everything you need to run like a pro.
-              </p>
+                /month
+              </span>
             </div>
-
-            <ul className="space-y-2.5 flex-1 mb-6">
-              {proBullets.map((b, i) => (
-                <li key={b} className="flex items-center gap-2.5">
-                  <div
-                    className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0"
-                    style={{ background: "var(--color-qm-accent)" }}
-                  >
-                    <Check size={10} strokeWidth={2.5} className="text-white" />
-                  </div>
-                  <span
-                    className="text-[13.5px]"
-                    style={{
-                      color:
-                        i === proBullets.length - 1
-                          ? "var(--color-qm-accent)"
-                          : "rgba(244,246,244,0.75)",
-                      fontWeight: i === proBullets.length - 1 ? 600 : 400,
-                    }}
-                  >
-                    {b}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <p
+              className="text-[14px] mb-8"
+              style={{ color: "rgba(244,246,244,0.5)" }}
+            >
+              All features included. Free for a limited time.
+            </p>
 
             <Link
-              href="/signup?plan=pro"
+              href="/signup"
               className="w-full h-12 rounded-[14px] text-[15px] font-semibold text-white flex items-center justify-center relative z-10"
               style={{ background: "var(--color-qm-accent)" }}
             >
-              Start free trial
+              Join the beta free
             </Link>
           </div>
         </div>
@@ -783,17 +659,17 @@ function FinalCTA() {
           Start pricing every job with confidence — and stop leaving money on the table.
         </p>
         <Link
-          href="/signup?plan=free"
+          href="/signup"
           className="inline-flex h-14 px-10 rounded-[16px] text-[16px] font-semibold text-white items-center justify-center"
           style={{ background: "var(--color-qm-accent)" }}
         >
-          Get started free
+          Join the beta free
         </Link>
         <p
           className="text-[12.5px] mt-4"
           style={{ color: "var(--color-qm-text-faint)" }}
         >
-          Free plan available · No credit card required · Setup in 2 minutes
+          Free during beta · All features included · No credit card required
         </p>
       </div>
     </section>
@@ -849,6 +725,20 @@ function Footer() {
           >
             Support
           </a>
+          <Link
+            href="/terms"
+            className="text-[13px] font-medium"
+            style={{ color: "rgba(255,255,255,0.45)" }}
+          >
+            Terms of Service
+          </Link>
+          <Link
+            href="/privacy"
+            className="text-[13px] font-medium"
+            style={{ color: "rgba(255,255,255,0.45)" }}
+          >
+            Privacy Policy
+          </Link>
           <span
             className="text-[12px]"
             style={{ color: "rgba(255,255,255,0.25)" }}
