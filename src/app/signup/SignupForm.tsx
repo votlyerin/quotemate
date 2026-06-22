@@ -6,33 +6,19 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AppLogo } from "@/components/AppLogo";
 
-// ── Plan badge shown on the signup form ───────────────────────────────────────
+// ── Beta badge shown on the signup form ───────────────────────────────────────
 
-function PlanBadge({ plan }: { plan: "free" | "pro" }) {
-  if (plan === "pro") {
-    return (
-      <div
-        className="mb-5 rounded-[12px] px-4 py-2.5 text-center text-[13px] font-medium"
-        style={{
-          background: "var(--color-qm-accent-soft)",
-          border: "1px solid rgba(16,185,129,0.2)",
-          color: "var(--color-qm-accent-dark)",
-        }}
-      >
-        ✓ Pro plan — 14-day free trial, then $19/month · Card required, not charged for 14 days
-      </div>
-    );
-  }
+function PlanBadge({ plan: _ }: { plan: "free" | "pro" }) {
   return (
     <div
       className="mb-5 rounded-[12px] px-4 py-2.5 text-center text-[13px] font-medium"
       style={{
-        background: "var(--color-qm-surface-alt)",
-        border: "1px solid var(--color-qm-border)",
-        color: "var(--color-qm-text-muted)",
+        background: "rgba(251,191,36,0.08)",
+        border: "1px solid rgba(251,191,36,0.2)",
+        color: "#FBBF24",
       }}
     >
-      Free plan — up to 5 quotes/month · No credit card ever
+      Beta access · All features free · No credit card required
     </div>
   );
 }
@@ -195,136 +181,20 @@ export function SignupForm({
           </div>
 
           <h1 className="text-2xl font-bold text-qm-text text-center tracking-tight">
-            Choose your plan
+            Join the beta
           </h1>
           <p className="text-sm text-qm-text-muted text-center mt-2 mb-8">
-            Start free, upgrade anytime — no credit card required.
+            All features free during beta. No credit card required.
           </p>
 
-          {/* Free card */}
           <button
             onClick={() => {
               setSelectedPlan("free");
               setScreen("signup");
             }}
-            className="w-full text-left rounded-[18px] p-5 mb-3 transition-shadow"
-            style={{
-              background: "var(--color-qm-surface)",
-              border: "1.5px solid var(--color-qm-border)",
-            }}
+            className="w-full h-14 rounded-[16px] bg-qm-accent text-white text-[17px] font-semibold mb-6"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[15px] font-bold text-qm-text">Free</p>
-                <p
-                  className="text-[22px] font-bold tracking-tight mt-0.5"
-                  style={{ color: "var(--color-qm-text)" }}
-                >
-                  $0
-                  <span className="text-[14px] font-normal text-qm-text-muted">
-                    /month
-                  </span>
-                </p>
-              </div>
-              <span
-                className="text-[12px] font-semibold px-2.5 py-1 rounded-full mt-1 shrink-0"
-                style={{
-                  background: "var(--color-qm-surface-alt)",
-                  color: "var(--color-qm-text-muted)",
-                }}
-              >
-                Always free
-              </span>
-            </div>
-            <ul className="mt-3 space-y-1.5">
-              {[
-                "5 quotes per month",
-                "Instant quote calculator",
-                "Profit margin tracking",
-                "Quote history (last 5)",
-              ].map((f) => (
-                <li
-                  key={f}
-                  className="text-[13px] text-qm-text-muted flex items-center gap-2"
-                >
-                  <span style={{ color: "var(--color-qm-accent)" }}>✓</span>
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <div
-              className="mt-4 w-full h-11 rounded-[12px] flex items-center justify-center text-[14px] font-semibold"
-              style={{
-                border: "1.5px solid var(--color-qm-border-strong)",
-                color: "var(--color-qm-text)",
-              }}
-            >
-              Get started free →
-            </div>
-          </button>
-
-          {/* Pro card */}
-          <button
-            onClick={() => {
-              setSelectedPlan("pro");
-              setScreen("signup");
-            }}
-            className="w-full text-left rounded-[18px] p-5 mb-6 relative overflow-hidden"
-            style={{
-              background: "#0E1414",
-              border: "1.5px solid rgba(16,185,129,0.3)",
-            }}
-          >
-            <div
-              className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10.5px] font-bold"
-              style={{
-                background: "rgba(16,185,129,0.15)",
-                color: "var(--color-qm-accent)",
-                border: "1px solid rgba(16,185,129,0.25)",
-              }}
-            >
-              14-day free trial
-            </div>
-            <div className="flex items-start gap-3">
-              <div>
-                <p
-                  className="text-[15px] font-bold"
-                  style={{ color: "var(--color-qm-accent)" }}
-                >
-                  Pro
-                </p>
-                <p className="text-[22px] font-bold tracking-tight mt-0.5 text-white">
-                  $19
-                  <span className="text-[14px] font-normal text-white opacity-45">
-                    /month
-                  </span>
-                </p>
-              </div>
-            </div>
-            <ul className="mt-3 space-y-1.5">
-              {[
-                "Unlimited quotes",
-                "Email & SMS delivery",
-                "Custom pricing defaults",
-                "Surcharge builder + truckload tiers",
-                "Full quote history",
-              ].map((f) => (
-                <li
-                  key={f}
-                  className="text-[13px] flex items-center gap-2"
-                  style={{ color: "rgba(244,246,244,0.7)" }}
-                >
-                  <span style={{ color: "var(--color-qm-accent)" }}>✓</span>
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <div
-              className="mt-4 w-full h-11 rounded-[12px] flex items-center justify-center text-[14px] font-semibold text-white"
-              style={{ background: "var(--color-qm-accent)" }}
-            >
-              Start free trial →
-            </div>
+            Join the beta free
           </button>
 
           <p className="text-sm text-qm-text-muted text-center">
@@ -373,9 +243,7 @@ export function SignupForm({
           <p className="text-sm text-qm-text-muted mt-3 leading-relaxed">
             We sent a confirmation link to{" "}
             <span className="font-semibold text-qm-text">{email}</span>. Click
-            {selectedPlan === "pro"
-              ? "it to activate your account — you'll then be taken to checkout to start your 14-day free trial. Your card won't be charged until day 15."
-              : "it to activate your free account."}
+            it to activate your account and start building quotes.
           </p>
 
           <div
@@ -613,9 +481,7 @@ export function SignupForm({
           Create your account
         </h1>
         <p className="text-sm text-qm-text-muted text-center mt-2 mb-6">
-          {selectedPlan === "pro"
-            ? "Create your account, then set up your card to start the trial"
-            : "Start building quotes in 60 seconds"}
+          Start building quotes in 60 seconds
         </p>
 
         {/* Plan badge */}
@@ -723,40 +589,11 @@ export function SignupForm({
             disabled={loading}
             className="w-full h-14 rounded-[16px] bg-qm-accent text-white text-[17px] font-semibold tracking-tight disabled:opacity-45 transition-opacity"
           >
-            {loading
-              ? "Creating account..."
-              : selectedPlan === "pro"
-              ? "Start free trial"
-              : "Get started free"}
+            {loading ? "Creating account..." : "Join the beta free"}
           </button>
         </form>
 
-        {/* Switch plan link */}
         <p className="text-sm text-qm-text-muted text-center mt-4">
-          {selectedPlan === "pro" ? (
-            <>
-              Want the free plan?{" "}
-              <button
-                onClick={() => setSelectedPlan("free")}
-                className="text-qm-accent font-semibold"
-              >
-                Switch to Free
-              </button>
-            </>
-          ) : (
-            <>
-              Want the Pro trial?{" "}
-              <button
-                onClick={() => setSelectedPlan("pro")}
-                className="text-qm-accent font-semibold"
-              >
-                Start 14-day trial
-              </button>
-            </>
-          )}
-        </p>
-
-        <p className="text-sm text-qm-text-muted text-center mt-3">
           Already have an account?{" "}
           <Link href="/login" className="text-qm-accent font-semibold">
             Sign in
