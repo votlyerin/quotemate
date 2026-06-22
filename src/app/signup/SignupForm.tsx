@@ -42,15 +42,17 @@ function PlanBadge({ plan }: { plan: "free" | "pro" }) {
 async function applyPlan(
   supabase: ReturnType<typeof createClient>,
   userId: string,
-  plan: "free" | "pro"
+  plan: "free" | "pro",
+  termsAgreedAt?: string,
 ) {
-  // Pro status is now always set by the Stripe webhook after checkout completes.
-  // Both free and pro start as "expired" (free default) until Stripe confirms payment.
-  // For free: clear trial_ends_at so the trial banner never appears.
   void plan;
   await supabase
     .from("profiles")
-    .update({ subscription_status: "expired", trial_ends_at: null })
+    .update({
+      subscription_status: "expired",
+      trial_ends_at: null,
+      ...(termsAgreedAt ? { terms_agreed_at: termsAgreedAt } : {}),
+    })
     .eq("id", userId);
 }
 
@@ -82,9 +84,11 @@ export function SignupForm({
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [termsAgreed, setTermsAgreed] = useState(false);
 
   // Loading / error
   const [error, setError] = useState("");
+  const [termsError, setTermsError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
@@ -95,13 +99,21 @@ export function SignupForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (!termsAgreed) {
+      setTermsError("You must agree to the Terms of Service to create an account");
+      return;
+    }
+    setTermsError("");
     setLoading(true);
+
+    const termsAgreedAt = new Date().toISOString();
 
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName, plan: selectedPlan },
+        data: { full_name: fullName, plan: selectedPlan, terms_agreed_at: termsAgreedAt },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
@@ -124,7 +136,7 @@ export function SignupForm({
       setScreen("confirm");
     } else {
       // Auto-confirmed — set profile to expired, then route based on plan
-      await applyPlan(supabase, data.session.user.id, selectedPlan);
+      await applyPlan(supabase, data.session.user.id, selectedPlan, termsAgreedAt);
 
       if (selectedPlan === "pro") {
         // Pro: redirect to Stripe checkout so a card is collected before trial starts
@@ -657,6 +669,53 @@ export function SignupForm({
               minLength={6}
               className="w-full h-[52px] px-4 rounded-[14px] border border-qm-border bg-qm-surface text-qm-text text-[17px] outline-none focus:border-qm-accent transition-colors"
             />
+          </div>
+
+          {/* Terms of Service checkbox */}
+          <div>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <div className="relative mt-[2px] shrink-0">
+                <input
+                  type="checkbox"
+                  checked={termsAgreed}
+                  onChange={(e) => {
+                    setTermsAgreed(e.target.checked);
+                    if (e.target.checked) setTermsError("");
+                  }}
+                  className="sr-only"
+                />
+                <div
+                  className="w-5 h-5 rounded-[5px] flex items-center justify-center transition-colors"
+                  style={{
+                    background: termsAgreed ? "var(--color-qm-accent)" : "var(--color-qm-surface)",
+                    border: `1.5px solid ${termsAgreed ? "var(--color-qm-accent)" : termsError ? "var(--color-qm-danger)" : "var(--color-qm-border-strong)"}`,
+                  }}
+                >
+                  {termsAgreed && (
+                    <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                      <path d="M1 4.5L4 7.5L10 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+              <span className="text-[13px] text-qm-text-muted leading-[1.45]">
+                I agree to the{" "}
+                <a
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-qm-accent font-semibold underline underline-offset-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Terms of Service
+                </a>
+              </span>
+            </label>
+            {termsError && (
+              <p className="mt-2 text-[12px] font-medium" style={{ color: "var(--color-qm-danger)" }}>
+                {termsError}
+              </p>
+            )}
           </div>
 
           <button

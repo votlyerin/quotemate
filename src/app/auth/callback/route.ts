@@ -75,10 +75,8 @@ export async function GET(request: Request) {
 
   // ── Signup / email confirmation — apply plan and route ───────────────────
   const userId = data.session.user.id;
-  const plan = data.session.user.user_metadata?.plan as
-    | "free"
-    | "pro"
-    | undefined;
+  const plan = data.session.user.user_metadata?.plan as "free" | "pro" | undefined;
+  const termsAgreedAt = data.session.user.user_metadata?.terms_agreed_at as string | undefined;
 
   if (plan) {
     const { data: profile } = await supabase
@@ -109,7 +107,11 @@ export async function GET(request: Request) {
       // Status stays expired until the Stripe webhook confirms payment.
       await supabase
         .from("profiles")
-        .update({ subscription_status: "expired", trial_ends_at: null })
+        .update({
+          subscription_status: "expired",
+          trial_ends_at: null,
+          ...(termsAgreedAt ? { terms_agreed_at: termsAgreedAt } : {}),
+        })
         .eq("id", userId);
 
       try {
@@ -157,7 +159,11 @@ export async function GET(request: Request) {
       // Free tier — mark expired so quota limits apply immediately
       await supabase
         .from("profiles")
-        .update({ subscription_status: "expired", trial_ends_at: null })
+        .update({
+          subscription_status: "expired",
+          trial_ends_at: null,
+          ...(termsAgreedAt ? { terms_agreed_at: termsAgreedAt } : {}),
+        })
         .eq("id", userId);
     }
   }
