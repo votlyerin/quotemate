@@ -257,20 +257,6 @@ function Hero() {
               />
               Built for junk removal pros
             </div>
-            <div
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-semibold"
-              style={{
-                background: "rgba(251,191,36,0.12)",
-                color: "#FBBF24",
-                border: "1px solid rgba(251,191,36,0.25)",
-              }}
-            >
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: "#FBBF24" }}
-              />
-              Now in Beta · Free access for a limited time
-            </div>
           </div>
 
           <h1
@@ -298,7 +284,7 @@ function Hero() {
               className="px-7 py-3 rounded-[16px] font-semibold text-white flex flex-col items-center justify-center"
               style={{ background: "var(--color-qm-accent)" }}
             >
-              <span className="text-[16px]">Join the beta free</span>
+              <span className="text-[16px]">Get started free</span>
               <span className="text-[11px] font-normal mt-0.5" style={{ color: "rgba(255,255,255,0.72)" }}>No credit card required</span>
             </Link>
           </div>
@@ -567,13 +553,13 @@ function PricingSection() {
             className="text-[28px] md:text-[34px] font-bold tracking-tight"
             style={{ color: "var(--color-qm-text)" }}
           >
-            Free during beta
+            Free to get started
           </h2>
           <p
             className="text-[15px] mt-3 max-w-md mx-auto"
             style={{ color: "var(--color-qm-text-muted)" }}
           >
-            QuoteMate is in beta — all features are free while we&apos;re getting started. No credit card required.
+            All features included, no credit card required. Set up your account in under 2 minutes.
           </p>
         </div>
 
@@ -593,18 +579,6 @@ function PricingSection() {
               }}
             />
 
-            <div
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-semibold mb-5"
-              style={{
-                background: "rgba(251,191,36,0.12)",
-                color: "#FBBF24",
-                border: "1px solid rgba(251,191,36,0.25)",
-              }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#FBBF24" }} />
-              Beta access
-            </div>
-
             <div className="flex items-end gap-1 mb-2">
               <span className="text-[52px] font-bold leading-none tracking-tight text-white">
                 $0
@@ -620,7 +594,7 @@ function PricingSection() {
               className="text-[14px] mb-8"
               style={{ color: "rgba(244,246,244,0.5)" }}
             >
-              All features included. Free for a limited time.
+              All features included. No credit card required.
             </p>
 
             <Link
@@ -628,7 +602,7 @@ function PricingSection() {
               className="w-full h-12 rounded-[14px] text-[15px] font-semibold text-white flex items-center justify-center relative z-10"
               style={{ background: "var(--color-qm-accent)" }}
             >
-              Join the beta free
+              Get started free
             </Link>
           </div>
         </div>
@@ -663,13 +637,13 @@ function FinalCTA() {
           className="inline-flex h-14 px-10 rounded-[16px] text-[16px] font-semibold text-white items-center justify-center"
           style={{ background: "var(--color-qm-accent)" }}
         >
-          Join the beta free
+          Get started free
         </Link>
         <p
           className="text-[12.5px] mt-4"
           style={{ color: "var(--color-qm-text-faint)" }}
         >
-          Free during beta · All features included · No credit card required
+          Free to get started · All features included · No credit card required
         </p>
       </div>
     </section>
