@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { LogOut, Check, CreditCard, Zap, Lock, ChevronRight, Mail } from "lucide-react";
+import { LogOut, Check, CreditCard, Zap, Lock, ChevronRight, Mail, MessageSquare } from "lucide-react";
 import posthog from "posthog-js";
 import type { Profile, TruckloadPricing } from "@/types/database";
 import { getEffectiveSubStatus, trialDaysLeft } from "@/lib/subscription";
 import { getTier } from "@/lib/tier";
 import { ProUpgradePrompt } from "@/components/ProUpgradePrompt";
-import { BETA_MODE } from "@/lib/beta";
+import { BETA_MODE, BETA_FEEDBACK_URL } from "@/lib/beta";
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -830,6 +830,25 @@ export function SettingsForm({
               "Save changes"
             )}
           </button>
+
+          {/* Beta feedback link — BETA_MODE: remove when beta ends */}
+          {BETA_MODE && (
+            <div className="mt-4 mb-1 flex justify-center">
+              <a
+                href={BETA_FEEDBACK_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[12px] pb-[2px]"
+                style={{
+                  color: "var(--color-qm-text-faint)",
+                  borderBottom: "1px solid var(--color-qm-border)",
+                }}
+              >
+                <MessageSquare size={11} strokeWidth={2} />
+                Share feedback
+              </a>
+            </div>
+          )}
         </div>
       </div>
 

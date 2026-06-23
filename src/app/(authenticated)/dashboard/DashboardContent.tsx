@@ -12,11 +12,13 @@ import {
   ArrowRight,
   X,
   Zap,
+  MessageSquare,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import type { Profile, Quote } from "@/types/database";
 import { effectiveStatus } from "@/lib/quote-status";
 import { getEffectiveSubStatus } from "@/lib/subscription";
+import { BETA_MODE, BETA_FEEDBACK_URL } from "@/lib/beta";
 
 const FREE_MONTHLY_LIMIT = 5;
 
@@ -399,6 +401,25 @@ export function DashboardContent({
                 </div>
               </Link>
             ))}
+          </div>
+        )}
+
+        {/* Beta feedback link — BETA_MODE: remove when beta ends */}
+        {BETA_MODE && (
+          <div className="mt-6 mb-1 flex justify-center">
+            <a
+              href={BETA_FEEDBACK_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[12px] pb-[2px]"
+              style={{
+                color: "var(--color-qm-text-faint)",
+                borderBottom: "1px solid var(--color-qm-border)",
+              }}
+            >
+              <MessageSquare size={11} strokeWidth={2} />
+              Share feedback
+            </a>
           </div>
         )}
       </div>
