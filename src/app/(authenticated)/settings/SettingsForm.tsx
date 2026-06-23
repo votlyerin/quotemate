@@ -9,6 +9,7 @@ import type { Profile, TruckloadPricing } from "@/types/database";
 import { getEffectiveSubStatus, trialDaysLeft } from "@/lib/subscription";
 import { getTier } from "@/lib/tier";
 import { ProUpgradePrompt } from "@/components/ProUpgradePrompt";
+import { BETA_MODE } from "@/lib/beta";
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -572,7 +573,9 @@ export function SettingsForm({
             )}
           </div>
 
-          {/* ── Subscription ── */}
+          {/* ── Subscription — hidden during beta ── */}
+          {/* BETA_MODE — remove bypass when beta ends */}
+          {!BETA_MODE && (
           <div>
             <SectionHeader label="Subscription" />
             <div className="flex flex-col gap-3">
@@ -732,6 +735,7 @@ export function SettingsForm({
               )}
             </div>
           </div>
+          )}
 
           {/* ── Account ── */}
           <div>
