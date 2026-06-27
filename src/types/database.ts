@@ -30,6 +30,8 @@ export interface Profile {
   // Onboarding
   onboarding_step: number | null;
   onboarded_at: string | null;
+  // Marketing
+  marketing_opted_in_at: string | null;
   // Subscription
   has_used_trial: boolean;
   stripe_customer_id: string | null;

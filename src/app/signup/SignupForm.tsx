@@ -30,6 +30,7 @@ async function applyPlan(
   userId: string,
   plan: "free" | "pro",
   termsAgreedAt?: string,
+  marketingOptedInAt?: string,
 ) {
   void plan;
   await supabase
@@ -38,6 +39,7 @@ async function applyPlan(
       subscription_status: "expired",
       trial_ends_at: null,
       ...(termsAgreedAt ? { terms_agreed_at: termsAgreedAt } : {}),
+      ...(marketingOptedInAt ? { marketing_opted_in_at: marketingOptedInAt } : {}),
     })
     .eq("id", userId);
 }
@@ -71,6 +73,7 @@ export function SignupForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [termsAgreed, setTermsAgreed] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
 
   // Loading / error
   const [error, setError] = useState("");
@@ -99,7 +102,7 @@ export function SignupForm({
       email,
       password,
       options: {
-        data: { full_name: fullName, plan: selectedPlan, terms_agreed_at: termsAgreedAt },
+        data: { full_name: fullName, plan: selectedPlan, terms_agreed_at: termsAgreedAt, marketing_opted_in: marketingOptIn },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
@@ -122,7 +125,15 @@ export function SignupForm({
       setScreen("confirm");
     } else {
       // Auto-confirmed — set profile to expired, then route based on plan
-      await applyPlan(supabase, data.session.user.id, selectedPlan, termsAgreedAt);
+      const marketingOptedInAt = marketingOptIn ? new Date().toISOString() : undefined;
+      await applyPlan(supabase, data.session.user.id, selectedPlan, termsAgreedAt, marketingOptedInAt);
+
+      // Sync marketing preference to Brevo (fire-and-forget, non-blocking)
+      fetch("/api/brevo/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ marketingOptIn }),
+      }).catch(() => {});
 
       // BETA_MODE — remove bypass when beta ends; restore Pro→checkout path below
       if (selectedPlan === "pro" && process.env.NEXT_PUBLIC_BETA_MODE !== "true") {
@@ -579,6 +590,36 @@ export function SignupForm({
                 {termsError}
               </p>
             )}
+          </div>
+
+          {/* Marketing opt-in checkbox (optional) */}
+          <div>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <div className="relative mt-[2px] shrink-0">
+                <input
+                  type="checkbox"
+                  checked={marketingOptIn}
+                  onChange={(e) => setMarketingOptIn(e.target.checked)}
+                  className="sr-only"
+                />
+                <div
+                  className="w-5 h-5 rounded-[5px] flex items-center justify-center transition-colors"
+                  style={{
+                    background: marketingOptIn ? "var(--color-qm-accent)" : "var(--color-qm-surface)",
+                    border: `1.5px solid ${marketingOptIn ? "var(--color-qm-accent)" : "var(--color-qm-border-strong)"}`,
+                  }}
+                >
+                  {marketingOptIn && (
+                    <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                      <path d="M1 4.5L4 7.5L10 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+              <span className="text-[13px] text-qm-text-muted leading-[1.45]">
+                Send me tips and product updates from QuoteMate
+              </span>
+            </label>
           </div>
 
           <button

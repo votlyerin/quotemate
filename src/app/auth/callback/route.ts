@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { stripe } from "@/lib/stripe";
 import { NextResponse } from "next/server";
+import { BrevoClient } from "@getbrevo/brevo";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -77,6 +78,8 @@ export async function GET(request: Request) {
   const userId = data.session.user.id;
   const plan = data.session.user.user_metadata?.plan as "free" | "pro" | undefined;
   const termsAgreedAt = data.session.user.user_metadata?.terms_agreed_at as string | undefined;
+  const marketingOptedIn = !!data.session.user.user_metadata?.marketing_opted_in;
+  const marketingOptedInAt = marketingOptedIn ? new Date().toISOString() : null;
 
   if (plan) {
     const { data: profile } = await supabase
@@ -111,8 +114,10 @@ export async function GET(request: Request) {
           subscription_status: "expired",
           trial_ends_at: null,
           ...(termsAgreedAt ? { terms_agreed_at: termsAgreedAt } : {}),
+          ...(marketingOptedInAt ? { marketing_opted_in_at: marketingOptedInAt } : {}),
         })
         .eq("id", userId);
+      void syncBrevoContact(data.session.user.email, marketingOptedIn);
 
       try {
         let customerId = profile?.stripe_customer_id ?? undefined;
@@ -163,10 +168,29 @@ export async function GET(request: Request) {
           subscription_status: "expired",
           trial_ends_at: null,
           ...(termsAgreedAt ? { terms_agreed_at: termsAgreedAt } : {}),
+          ...(marketingOptedInAt ? { marketing_opted_in_at: marketingOptedInAt } : {}),
         })
         .eq("id", userId);
+      void syncBrevoContact(data.session.user.email, marketingOptedIn);
     }
   }
 
   return authRedirect(`${appUrl}${next}`);
+}
+
+// Fire-and-forget — syncs the user's marketing opt-in preference to Brevo.
+// NOTE: MARKETING_OPT_IN must exist as a boolean contact attribute in Brevo
+// (Contacts → Contact Attributes → Add new attribute) before values will save.
+async function syncBrevoContact(email: string | undefined, marketingOptIn: boolean) {
+  if (!email || !process.env.BREVO_API_KEY) return;
+  try {
+    const brevo = new BrevoClient({ apiKey: process.env.BREVO_API_KEY });
+    await brevo.contacts.createContact({
+      email,
+      attributes: { MARKETING_OPT_IN: marketingOptIn },
+      updateEnabled: true,
+    });
+  } catch (err) {
+    console.error("[auth/callback] Brevo contact sync failed:", err);
+  }
 }
